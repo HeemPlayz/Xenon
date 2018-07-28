@@ -58,14 +58,14 @@ namespace Xenon.Services.Music
         {
             return Uri.IsWellFormedUriString(query, UriKind.RelativeOrAbsolute)
                 ? new Uri(query)
-                : new Uri($"ytsearch:{query}");
+                : new Uri($"ytsearch ❯{query}");
         }
 
         private DiscordEmbedBuilder MakeNowPlaying(LavalinkTrack track)
         {
             return new DiscordEmbedBuilder()
                 .WithTitle($"Now playing {track.Title}")
-                .WithDescription($"Artist: {track.Author}\nLength: {track.Length.Minutes}.{track.Length.Seconds}")
+                .WithDescription($"Artist ❯ {track.Author}\nLength ❯ {track.Length.Minutes}.{track.Length.Seconds}")
                 .WithColor(DiscordColor.Purple);
         }
     }

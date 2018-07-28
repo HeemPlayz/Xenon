@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -26,6 +27,7 @@ namespace Xenon.Core
         private readonly int _shardCount = 1;
         private DiscordClient _client;
         private CommandsNextExtension _commandsNext;
+        private ConfigurationService _configurationService;
         private HttpClient _httpClient;
         private InteractivityExtension _interactivity;
         private LavalinkExtension _lavalink;
@@ -34,7 +36,7 @@ namespace Xenon.Core
 
         public async Task InitializeAsync()
         {
-            var configurationService = ConfigurationService.LoadNewConfig();
+            _configurationService = ConfigurationService.LoadNewConfig();
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("DiscordBot", "0.9"));
             _random = new Random();
@@ -42,12 +44,12 @@ namespace Xenon.Core
             {
                 AutomaticGuildSync = true,
                 AutoReconnect = true,
-                DateTimeFormat = "mm.dd.yyyy",
+                DateTimeFormat = "mm/dd/yyyy",
                 LogLevel = LogLevel.Debug,
                 MessageCacheSize = 2048,
                 ReconnectIndefinitely = true,
                 TokenType = TokenType.Bot,
-                Token = configurationService.BotToken,
+                Token = _configurationService.BotToken,
                 UseInternalLogHandler = true,
                 ShardCount = _shardCount
             });
@@ -63,7 +65,7 @@ namespace Xenon.Core
                 .AddSingleton(_interactivity)
                 .AddSingleton(_lavalink)
                 .AddSingleton(_random)
-                .AddSingleton(configurationService)
+                .AddSingleton(_configurationService)
                 .AddSingleton<DatabaseService>()
                 .AddSingleton<UtilService>()
                 .AddSingleton<LogService>()
@@ -74,7 +76,7 @@ namespace Xenon.Core
             {
                 CaseSensitive = false,
                 EnableDms = true,
-                StringPrefixes = configurationService.BotPrefixes,
+                StringPrefixes = _configurationService.BotPrefixes,
                 EnableMentionPrefix = true,
                 IgnoreExtraArguments = false,
                 Services = _serviceProvider,
@@ -112,19 +114,32 @@ namespace Xenon.Core
 
         private Task<int> ResolvePrefix(DiscordMessage msg)
         {
-            if (msg.Channel is DiscordDmChannel) return Task.FromResult(-1);
+            var argPos = msg.GetMentionPrefixLength(_client.CurrentUser);
+            var prefixes = new List<string>(_configurationService.BotPrefixes);
+            if (msg.Channel is DiscordDmChannel)
+            {
+                prefixes.AddRange(_configurationService.BotPrefixes);
+            }
+            else
+            {
+                var server = _serviceProvider.GetService<DatabaseService>()
+                    .GetObject<Server>(msg.Channel.GuildId);
 
-            var argPos = -1;
+                switch (server.BlockingType)
+                {
+                    case ChannelBlockingType.Whitelist when !server.MarkedChannels.Contains(msg.ChannelId):
+                        return Task.FromResult(-1);
+                    case ChannelBlockingType.Blacklist when server.MarkedChannels.Contains(msg.ChannelId):
+                        return Task.FromResult(-1);
+                    case ChannelBlockingType.None:
+                        break;
+                }
 
-            var prefixes = _serviceProvider.GetService<DatabaseService>().GetObject<Server>(msg.Channel.GuildId)
-                .Prefixes;
+                prefixes.AddRange(server.Prefixes);
 
-            if (prefixes == null) return Task.FromResult(-1);
-
-            var customPrefixes = prefixes.ToArray();
-
-            for (var i = 0; argPos == -1 && i < customPrefixes.Length; i++)
-                argPos = msg.GetStringPrefixLength(customPrefixes[i]);
+                for (var i = 0; argPos == -1 && i < prefixes.Count; i++)
+                    argPos = msg.GetStringPrefixLength(prefixes[i]);
+            }
 
             return Task.FromResult(argPos);
         }

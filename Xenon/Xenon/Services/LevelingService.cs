@@ -26,7 +26,7 @@ namespace Xenon.Services
         {
             var server = _databaseService.GetObject<Server>(ctx.Guild.Id);
             Userxp userxp;
-            if (!server.Userxps.TryGetValue(ctx.User.Id, out userxp)) userxp = new Userxp {Level = 0, Xp = 0};
+            if (!server.Userxps.TryGetValue(ctx.User.Id, out userxp)) userxp = new Userxp();
         }
     }
 }

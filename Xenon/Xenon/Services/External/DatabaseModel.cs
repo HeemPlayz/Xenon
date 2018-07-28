@@ -33,12 +33,12 @@ namespace Xenon.Services.External
 
     public class Server
     {
-        public HashSet<ulong> Blacklist = new HashSet<ulong>();
         public ChannelBlockingType BlockingType = ChannelBlockingType.None;
         public HashSet<string> JoinMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public HashSet<string> LeaveMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public bool LevelingState = true;
         public HashSet<string> LevelUpMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        public HashSet<ulong> MarkedChannels = new HashSet<ulong>();
         public Dictionary<ulong, ModLogItem> ModLog = new Dictionary<ulong, ModLogItem>();
         public bool NsfwState = true;
         public HashSet<string> Prefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -55,9 +55,32 @@ namespace Xenon.Services.External
             set => Id = $"{value}";
         }
 
-        public ulong? AnnounceChannelId { get; set; }
-        public ulong? AutoroleId { get; set; }
-        public ulong? LogChannelId { get; set; }
+        private string AnnounceChannel { get; set; }
+
+        [JsonIgnore]
+        public ulong? AnnounceChannelId
+        {
+            get => AnnounceChannel == null ? (ulong?) null : ulong.Parse(AnnounceChannel);
+            set => AnnounceChannel = $"{value}";
+        }
+
+        private string Autorole { get; set; }
+
+        [JsonIgnore]
+        public ulong? AutoroleId
+        {
+            get => Autorole == null ? (ulong?) null : ulong.Parse(Autorole);
+            set => Autorole = $"{value}";
+        }
+
+        private string LogChannel { get; set; }
+
+        [JsonIgnore]
+        public ulong? LogChannelId
+        {
+            get => LogChannel == null ? (ulong?) null : ulong.Parse(LogChannel);
+            set => LogChannel = $"{value}";
+        }
     }
 
     public class Userxp
@@ -65,9 +88,9 @@ namespace Xenon.Services.External
         private string Id { get; set; }
 
         [JsonIgnore]
-        private ulong UserId
+        private ulong? UserId
         {
-            get => ulong.Parse(Id);
+            get => Id == null ? (ulong?) null : ulong.Parse(Id);
             set => Id = $"{value}";
         }
 
@@ -126,7 +149,14 @@ namespace Xenon.Services.External
     public class Warn
     {
         public string Reason { get; set; }
-        public ulong AuthorId { get; set; }
+        private string Author { get; set; }
+
+        public ulong AuthorId
+        {
+            get => ulong.Parse(Author);
+            set => Author = $"{value}";
+        }
+
         public int WarnId { get; set; }
         public DateTime TimeStamp { get; set; }
     }

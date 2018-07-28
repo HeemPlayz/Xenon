@@ -30,7 +30,7 @@ namespace Xenon.Services.External
             if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
 
             await SendLogMessage("Channel created",
-                $"Channel: {e.Channel.Mention}\nResponsible User: {auditLog.UserResponsible.Mention}\nReason: {auditLog.Reason ?? "none"}\nId: {auditLog.Id}",
+                $"Channel ❯ {e.Channel.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}",
                 e.Guild, auditLog.CreationTimestamp);
         }
 
@@ -43,7 +43,7 @@ namespace Xenon.Services.External
             if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
 
             await SendLogMessage("Channel deleted",
-                $"Channel: {e.Channel.Name}\nResponsible User: {auditLog.UserResponsible.Mention}\nReason: {auditLog.Reason ?? "none"}\nId: {auditLog.Id}",
+                $"Channel ❯ {e.Channel.Name}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}",
                 e.Guild, auditLog.CreationTimestamp);
         }
 
@@ -56,7 +56,7 @@ namespace Xenon.Services.External
             if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
 
             var description =
-                $"Channel: {e.ChannelAfter.Mention}\nResponsible User: {auditLog.UserResponsible.Mention}\nReason: {auditLog.Reason ?? "none"}\nId: {auditLog.Id}\nChanges:";
+                $"Channel ❯ {e.ChannelAfter.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}\nChanges ❯";
             var oldDescription = description;
             var properties = typeof(DiscordChannel).GetProperties().Where(x =>
                 x.PropertyType != typeof(IEnumerable<DiscordChannel>) &&
@@ -67,7 +67,7 @@ namespace Xenon.Services.External
                 var propertyBefore = property.GetValue(e.ChannelBefore);
                 var propertyAfter = property.GetValue(e.ChannelAfter);
                 if (propertyBefore.ToString() != propertyAfter.ToString())
-                    description += $"\n❯ {property.Name}: {propertyBefore} ⇒ {propertyAfter}";
+                    description += $"\n❯ {property.Name} ❯ {propertyBefore} ⇒ {propertyAfter}";
             }
 
             if (description == oldDescription) return;
@@ -86,7 +86,7 @@ namespace Xenon.Services.External
             var logId = CreateLogEntry(auditLog, e.Member, AuditLogActionType.Ban);
 
             await SendLogMessage("Member banned",
-                $"User: {e.Member.Mention} ({e.Member.DisplayName})\nResponsible User: {auditLog.UserResponsible.Mention}\nReason: {auditLog.Reason ?? $"none, {auditLog.UserResponsible.Mention} use {Formatter.InlineCode($"reason {logId} <reason>")}"}\nId: {auditLog.Id}",
+                $"User ❯ {e.Member.Mention} ({e.Member.DisplayName})\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? $"none, {auditLog.UserResponsible.Mention} use {Formatter.InlineCode($"reason {logId} <reason>")}"}\nId ❯ {auditLog.Id}",
                 e.Guild, auditLog.CreationTimestamp);
         }
 
@@ -102,7 +102,7 @@ namespace Xenon.Services.External
             var logId = CreateLogEntry(auditLog, e.Member, AuditLogActionType.Kick);
 
             await SendLogMessage("Member kicked",
-                $"User: {e.Member.Mention} ({e.Member.DisplayName})\nResponsible User: {auditLog.UserResponsible.Mention}\nReason: {auditLog.Reason ?? $"none, {auditLog.UserResponsible.Mention} use {Formatter.InlineCode($"reason {logId} <reason>")}"}\nId: {auditLog.Id}",
+                $"User ❯ {e.Member.Mention} ({e.Member.DisplayName})\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? $"none, {auditLog.UserResponsible.Mention} use {Formatter.InlineCode($"reason {logId} <reason>")}"}\nId ❯ {auditLog.Id}",
                 e.Guild, auditLog.CreationTimestamp);
         }
 
@@ -117,7 +117,7 @@ namespace Xenon.Services.External
             var logId = CreateLogEntry(auditLog, e.Member, AuditLogActionType.Ban);
 
             await SendLogMessage("Member unbanned",
-                $"User: {e.Member.Mention} ({e.Member.DisplayName})\nResponsible User: {auditLog.UserResponsible.Mention}\nReason: {auditLog.Reason ?? $"none, {auditLog.UserResponsible.Mention} use {Formatter.InlineCode($"reason {logId} <reason>")}"}\nId: {auditLog.Id}",
+                $"User ❯ {e.Member.Mention} ({e.Member.DisplayName})\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? $"none, {auditLog.UserResponsible.Mention} use {Formatter.InlineCode($"reason {logId} <reason>")}"}\nId ❯ {auditLog.Id}",
                 e.Guild, auditLog.CreationTimestamp);
         }
 
@@ -130,10 +130,10 @@ namespace Xenon.Services.External
             if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
 
             var description =
-                $"User: {e.Member.Mention}\nResponsible User: {auditLog.UserResponsible.Mention}\nReason: {auditLog.Reason ?? "none"}\nId: {auditLog.Id}\nChanges:";
+                $"User ❯ {e.Member.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}\nChanges ❯";
             if (e.NicknameBefore != e.NicknameAfter)
                 description +=
-                    $"\n❯ Nickname: {e.NicknameBefore ?? e.Member.Username} ⇒ {e.NicknameAfter ?? e.Member.Username}";
+                    $"\n❯ Nickname ❯ {e.NicknameBefore ?? e.Member.Username} ⇒ {e.NicknameAfter ?? e.Member.Username}";
 
             var difference = e.RolesBefore.Except(e.RolesAfter);
             if (difference.Any())
@@ -157,7 +157,7 @@ namespace Xenon.Services.External
             if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
 
             await SendLogMessage("Role created",
-                $"Role: {e.Role.Mention}\nResponsible User: {auditLog.UserResponsible}\nReason: {auditLog.Reason ?? "none"}\nId: {auditLog.Id}",
+                $"Role ❯ {e.Role.Mention}\nResponsible User ❯ {auditLog.UserResponsible}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}",
                 e.Guild, auditLog.CreationTimestamp);
         }
 
@@ -170,7 +170,7 @@ namespace Xenon.Services.External
             if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
 
             await SendLogMessage("Role deleted",
-                $"Role: {e.Role.Name}\nResponsible User: {auditLog.UserResponsible}\nReason: {auditLog.Reason ?? "none"}\nId: {auditLog.Id}",
+                $"Role ❯ {e.Role.Name}\nResponsible User ❯ {auditLog.UserResponsible}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}",
                 e.Guild, auditLog.CreationTimestamp);
         }
 
@@ -181,7 +181,7 @@ namespace Xenon.Services.External
             if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
 
             var description =
-                $"Role: {e.RoleAfter.Mention}\nResponsible User: {auditLog.UserResponsible.Mention}\nReason: {auditLog.Reason ?? "none"}\nId: {auditLog.Id}\nChanges:";
+                $"Role ❯ {e.RoleAfter.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}\nChanges ❯";
             var oldDescription = description;
             var properties = typeof(DiscordRole).GetProperties()
                 .Where(x => x.PropertyType != typeof(int));
@@ -190,7 +190,7 @@ namespace Xenon.Services.External
                 var propertyBefore = property.GetValue(e.RoleBefore);
                 var propertyAfter = property.GetValue(e.RoleAfter);
                 if (propertyBefore.ToString() != propertyAfter.ToString())
-                    description += $"\n❯ {property.Name}: {propertyBefore} ⇒ {propertyAfter}";
+                    description += $"\n❯ {property.Name} ❯ {propertyBefore} ⇒ {propertyAfter}";
             }
 
             if (description == oldDescription) return;
@@ -208,14 +208,14 @@ namespace Xenon.Services.External
             {
                 if (e.Message.Content == null) return;
                 description =
-                    $"Author: {e.Message.Author.Mention}\nResponsible User: {e.Message.Author.Mention}\nChannel: {e.Message.Channel.Mention}\nContent: {e.Message.Content}\nReason: none";
+                    $"Author ❯ {e.Message.Author.Mention}\nResponsible User ❯ {e.Message.Author.Mention}\nChannel ❯ {e.Message.Channel.Mention}\nContent ❯ {e.Message.Content}\nReason ❯ none";
 
                 await SendLogMessage("Message deleted", description, e.Guild, DateTimeOffset.Now);
             }
             else
             {
                 description =
-                    $"Author: {e.Message.Author.Mention}\nResponsible User: {auditLog.UserResponsible.Mention}\nChannel: {e.Message.Channel.Mention}\nContent: {e.Message.Content ?? "none"}\nReason: {auditLog.Reason ?? "none"}\nId: {auditLog.Id}";
+                    $"Author ❯ {e.Message.Author.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nChannel ❯ {e.Message.Channel.Mention}\nContent ❯ {e.Message.Content ?? "none"}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}";
 
                 await SendLogMessage("Message deleted", description, e.Guild, auditLog.CreationTimestamp);
             }
@@ -230,7 +230,7 @@ namespace Xenon.Services.External
                 string.IsNullOrWhiteSpace(e.Message.Content)) return;
 
             var description =
-                $"Author: {e.Author.Mention}\nChannel: {e.Channel}\nBefore: {e.MessageBefore.Content}\nAfter: {e.Message.Content}";
+                $"Author ❯ {e.Author.Mention}\nChannel ❯ {e.Channel}\nBefore ❯ {e.MessageBefore.Content}\nAfter ❯ {e.Message.Content}";
             await SendLogMessage("Message updated", description, e.Guild, DateTimeOffset.Now);
         }
 

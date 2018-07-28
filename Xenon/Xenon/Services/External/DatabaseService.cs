@@ -12,7 +12,7 @@ namespace Xenon.Services.External
 {
     public class DatabaseService
     {
-        private const string DatabaseName = "NewDiscordBot";
+        private const string DatabaseName = "DiscordBot";
         private readonly ConfigurationService _configurationService;
         private readonly Lazy<IDocumentStore> _store;
 

@@ -108,7 +108,7 @@ namespace Xenon.Modules
                         var actionUser = ctx.Guild.Members.FirstOrDefault(y => y.Id == x.ResponsibleUserId);
 
                         return
-                            $"❯ {Formatter.Bold($"{x.LogId}.")} {x.ActionType}: {(actionUser == null ? "invalid user" : actionUser.Mention)} ⇒ {(user == null ? "invalid user" : user.Mention)} ❯ Reason: {x.Reason}";
+                            $"❯ {Formatter.Bold($"{x.LogId}.")} {x.ActionType} ❯ {(actionUser == null ? "invalid user" : actionUser.Mention)} ⇒ {(user == null ? "invalid user" : user.Mention)} ❯ Reason ❯ {x.Reason}";
                     }))))
                     .WithFooter($"Page {pageIndex}/{seperatedObjects.Count()}");
                 pages.Add(new Page {Embed = embed});
@@ -149,7 +149,7 @@ namespace Xenon.Modules
                         var actionUser = ctx.Guild.Members.FirstOrDefault(y => y.Id == x.ResponsibleUserId);
 
                         return
-                            $"❯ {Formatter.Bold($"{x.LogId}.")} {x.ActionType}: {(actionUser == null ? "invalid user" : actionUser.Mention)} ⇒ {(targetUser == null ? "invalid user" : targetUser.Mention)} ❯ Reason: {x.Reason ?? "none"}";
+                            $"❯ {Formatter.Bold($"{x.LogId}.")} {x.ActionType} ❯ {(actionUser == null ? "invalid user" : actionUser.Mention)} ⇒ {(targetUser == null ? "invalid user" : targetUser.Mention)} ❯ Reason ❯ {x.Reason ?? "none"}";
                     }))))
                     .WithFooter($"Page {pageIndex}/{seperatedObjects.Count()}");
                 pages.Add(new Page {Embed = embed});
@@ -212,7 +212,7 @@ namespace Xenon.Modules
                         var actionUser = ctx.Guild.Members.FirstOrDefault(y => y.Id == x.ResponsibleUserId);
 
                         return
-                            $"❯ {Formatter.Bold($"{x.LogId}.")} {x.ActionType}: {(actionUser == null ? "invalid user" : actionUser.Mention)} ⇒ {(targetUser == null ? "invalid user" : targetUser.Mention)} ❯ Reason: {x.Reason ?? "none"}";
+                            $"❯ {Formatter.Bold($"{x.LogId}.")} {x.ActionType} ❯ {(actionUser == null ? "invalid user" : actionUser.Mention)} ⇒ {(targetUser == null ? "invalid user" : targetUser.Mention)} ❯ Reason ❯ {x.Reason ?? "none"}";
                     }))))
                     .WithFooter($"Page {pageIndex}/{seperatedObjects.Count()}");
                 pages.Add(new Page {Embed = embed});

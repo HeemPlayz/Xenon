@@ -35,19 +35,34 @@ namespace Xenon.Modules
         [RequireGuild]
         public async Task ServerInfoAsync(CommandContext ctx)
         {
+            var emojis = string.Join(" ", ctx.Guild.Emojis.Select(x => x.ToString()));
+            if (emojis.Length > 1024)
+            {
+                emojis = emojis.Substring(0, Math.Min(1024, emojis.Length));
+                emojis = emojis.Substring(0, emojis.LastIndexOf(' '));
+            }
+
+            var roles = string.Join(", ", ctx.Guild.Roles.Select(x => x.Mention));
+            if (roles.Length > 512)
+            {
+                roles = roles.Substring(0, Math.Min(512, roles.Length));
+                roles = roles.Substring(0, roles.LastIndexOf(','));
+            }
+
             var embed = new DiscordEmbedBuilder()
                 .WithAuthor(ctx.Guild.Name, icon_url: ctx.Guild.IconUrl)
                 .WithColor(DiscordColor.Purple)
                 .AddField("General Information",
                     $"{Formatter.Bold("Name")} ❯ {ctx.Guild.Name}" +
                     $"\n{Formatter.Bold("Id")} ❯ {ctx.Guild.Id}\n{Formatter.Bold("Owner")} ❯ {ctx.Guild.Owner.Mention}" +
-                    $"\n{Formatter.Bold("Region")} ❯ {ctx.Guild.VoiceRegion.Name}\n{Formatter.Bold("Verification")} ❯ {ctx.Guild.VerificationLevel}" +
+                    $"\n{Formatter.Bold("Verification")} ❯ {ctx.Guild.VerificationLevel}" +
                     $"\n{Formatter.Bold("Afk Channel")} ❯ {(ctx.Guild.AfkChannel == null ? "None" : ctx.Guild.AfkChannel.Mention)}" +
-                    $"\n{Formatter.Bold("Afk Timeout")} ❯ {ctx.Guild.AfkTimeout} minutes\n{Formatter.Bold("Highest Role")} ❯ {ctx.Guild.Roles.OrderByDescending(x => x.Position).First().Mention}" +
+                    $"\n{Formatter.Bold("Afk Timeout")} ❯ {ctx.Guild.AfkTimeout} minutes" +
+                    $"\n{Formatter.Bold("Highest Role")} ❯ {ctx.Guild.Roles.OrderByDescending(x => x.Position).First().Mention}" +
                     $"\n{Formatter.Bold("Created On")} ❯ {ctx.Guild.CreationTimestamp:G}",
                     true)
                 .AddField($"Members - {ctx.Guild.MemberCount}",
-                    $"{Formatter.Bold("<:online:456907751420067866> Online")} ❯ {ctx.Guild.Members.Count(x => x.Presence?.Status == UserStatus.Online && !x.IsBot)}" +
+                    $"{Formatter.Bold("< ❯online:456907751420067866> Online")} ❯ {ctx.Guild.Members.Count(x => x.Presence?.Status == UserStatus.Online && !x.IsBot)}" +
                     $"\n{Formatter.Bold("<:idle:456910024984363014> Idle")} ❯ {ctx.Guild.Members.Count(x => x.Presence?.Status == UserStatus.Idle && !x.IsBot)}" +
                     $"\n{Formatter.Bold("<:donotdisturb:456910051345563678> DoNotDisturb")} ❯ {ctx.Guild.Members.Count(x => x.Presence?.Status == UserStatus.DoNotDisturb && !x.IsBot)}" +
                     $"\n{Formatter.Bold("<:streaming:456910068839874560> Streaming")} ❯ {ctx.Guild.Members.Count(x => x.Presence?.Activity.ActivityType == ActivityType.Streaming && !x.IsBot)}" +
@@ -55,11 +70,13 @@ namespace Xenon.Modules
                     $"\n{Formatter.Bold("<:bot:456910103136829441> Bots")} ❯ {ctx.Guild.Members.Count(x => x.IsBot)}",
                     true)
                 .AddField($"Roles - {ctx.Guild.Roles.Count}",
-                    string.Join(", ", ctx.Guild.Roles.Select(x => x.Mention).TakeWhile(x => x.Length <= 1024)), true)
+                    roles, true)
                 .AddField($"Emojis - {ctx.Guild.Emojis.Count}",
-                    string.Join(" ", ctx.Guild.Emojis.Select(x => x.ToString()).TakeWhile(x => x.Length <= 1024)), true)
+                    emojis, true)
                 .AddField($"Channels - {ctx.Guild.Channels.Count}",
-                    $"{Formatter.Bold("Categorys")} ❯ {ctx.Guild.Channels.Count(x => x.Type == ChannelType.Category)}\n{Formatter.Bold("Text Channels")} ❯ {ctx.Guild.Channels.Count(x => x.Type == ChannelType.Text)}\n{Formatter.Bold("Voice Channels")} ❯ {ctx.Guild.Channels.Count(x => x.Type == ChannelType.Voice)}",
+                    $"{Formatter.Bold("Categorys")} ❯ {ctx.Guild.Channels.Count(x => x.Type == ChannelType.Category)}" +
+                    $"\n{Formatter.Bold("Text Channels")} ❯ {ctx.Guild.Channels.Count(x => x.Type == ChannelType.Text)}" +
+                    $"\n{Formatter.Bold("Voice Channels")} ❯ {ctx.Guild.Channels.Count(x => x.Type == ChannelType.Voice)}",
                     true);
 
             await ctx.RespondAsync(embed: embed);
@@ -112,7 +129,7 @@ namespace Xenon.Modules
                 }
 
                 description +=
-                    $"{i - uprank} ❯ {user.Mention}\nLevel ❯ {entry.Value.Level} | Xp: {entry.Value.Xp}/{_levelingService.GetNeededXp(entry.Value.Level)}";
+                    $"{i - uprank} ❯ {user.Mention}\nLevel ❯ {entry.Value.Level} | Xp ❯ {entry.Value.Xp}/{_levelingService.GetNeededXp(entry.Value.Level)}";
             }
 
             embed.WithDescription(description);

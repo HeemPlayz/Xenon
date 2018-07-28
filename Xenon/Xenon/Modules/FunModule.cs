@@ -64,7 +64,7 @@ namespace Xenon.Modules
 
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("8Ball has spoken")
-                .WithDescription($"Question: {question}\n\n8Ball's answer: {data["response"]}")
+                .WithDescription($"Question ❯ {question}\n\n8Ball's answer ❯ {data["response"]}")
                 .WithThumbnailUrl($"{data["url"]}")
                 .WithColor(DiscordColor.Purple);
 
@@ -120,7 +120,7 @@ namespace Xenon.Modules
         public async Task OutAsync(CommandContext ctx, DiscordUser user)
         {
             var embed = new DiscordEmbedBuilder()
-                .WithDescription($"{user.Mention} :point_right::skin-tone-1: :door:")
+                .WithDescription($"{user.Mention}  ❯point_right::skin-tone-1 ❯  ❯door ❯")
                 .WithColor(DiscordColor.Purple);
             await ctx.RespondAsync(embed: embed);
         }

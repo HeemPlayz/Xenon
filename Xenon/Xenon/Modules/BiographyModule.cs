@@ -27,15 +27,14 @@ namespace Xenon.Modules
         [GroupCommand]
         public async Task BiographyAsync(CommandContext ctx)
         {
-            await BiographyAsync(ctx, await ctx.Guild.GetMemberAsync(ctx.User.Id));
+            await BiographyAsync(ctx, ctx.User);
         }
 
         [GroupCommand]
-        [RequireGuild]
-        public async Task BiographyAsync(CommandContext ctx, DiscordMember user)
+        public async Task BiographyAsync(CommandContext ctx, DiscordUser user)
         {
             var embed = new DiscordEmbedBuilder()
-                .WithAuthor(user.DisplayName, icon_url: user.AvatarUrl)
+                .WithAuthor(user.Username, icon_url: user.AvatarUrl)
                 .WithDescription(_databaseService.GetObject<User>(ctx.User.Id).Bio)
                 .WithColor(DiscordColor.Purple)
                 .WithTimestamp(DateTime.Now);
@@ -43,8 +42,7 @@ namespace Xenon.Modules
         }
 
         [GroupCommand]
-        public async Task BiographyAsync(CommandContext ctx, [RemainingText] [Description("Your new biography")]
-            string text)
+        public async Task BiographyAsync(CommandContext ctx, [RemainingText] string text)
         {
             var user = _databaseService.GetObject<User>(ctx.User.Id);
             user.Bio = text;
