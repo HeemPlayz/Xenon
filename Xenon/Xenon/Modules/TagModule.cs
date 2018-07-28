@@ -8,6 +8,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
+using Humanizer;
 using Sparrow.Platform.Posix;
 using Sparrow.Utils;
 using Xenon.Core;
@@ -122,6 +123,179 @@ namespace Xenon.Modules
             }
 
             await AddTagAsync(ctx, name, message);
+        }
+
+        [Command("claim")]
+        public async Task ClaimAsync(CommandContext ctx, [RemainingText] string tag)
+        {
+            var server = _databaseService.GetObject<Server>(ctx.Guild.Id);
+            if (server.Tags.TryGetValue(tag, out var specificTag))
+            {
+                CheckPermissions(ctx.Member, specificTag);
+                specificTag.AuthorId = ctx.User.Id;
+                specificTag.Name = tag;
+            }
+            else
+            {
+                specificTag = new Tag{AuthorId = ctx.User.Id, Message = "None set", Name = tag, TimeStamp = DateTime.Now};
+            }
+
+            
+            var embed = new DiscordEmbedBuilder()
+                .WithTitle("Tag claimed")
+                .WithColor(DiscordColor.Purple)
+                .WithDescription($"Claimed the tag {Formatter.InlineCode(specificTag.Name)}");
+
+            await ctx.RespondAsync(embed: embed);
+            
+            server.Tags[tag] = specificTag;
+            _databaseService.AddOrUpdateObject(server, server.Id);
+        }
+        
+        [Command("edit")]
+        public async Task EditAsync(CommandContext ctx)
+        {
+            var embed = new DiscordEmbedBuilder()
+                .WithColor(DiscordColor.Purple)
+                .WithTitle("Edit a tag")
+                .WithDescription(
+                    $"What is the name of the tag? (Type {Formatter.InlineCode("cancel")} to stop");
+            await ctx.RespondAsync(embed: embed);
+            var name = (await _interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.User.Id)).Message.Content;
+            if (string.Equals(name, "cancel", StringComparison.OrdinalIgnoreCase))
+            {
+                embed.WithTitle("Cancelled")
+                    .WithDescription("Cancelled the tag creation");
+                await ctx.RespondAsync(embed: embed);
+                return;
+            }
+
+            await EditAsync(ctx, name);
+        }
+
+        [Command("edit")]
+        public async Task EditAsync(CommandContext ctx, [RemainingText] string name)
+        {
+            var embed = new DiscordEmbedBuilder()
+                .WithColor(DiscordColor.Purple)
+                .WithTitle("Edit a tag")
+                .WithDescription(
+                    $"What should be the new message of the tag? (Type {Formatter.InlineCode("cancel")} to stop");
+            await ctx.RespondAsync(embed: embed);
+            var message = (await _interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.User.Id)).Message.Content;
+            if (string.Equals(message, "cancel", StringComparison.OrdinalIgnoreCase))
+            {
+                embed.WithTitle("Cancelled")
+                    .WithDescription("Cancelled the tag creation");
+                await ctx.RespondAsync(embed: embed);
+                return;
+            }
+
+            await EditAsync(ctx, name, message);
+        }
+
+        [Command("edit")]
+        public async Task EditAsync(CommandContext ctx, string name, [RemainingText] string message)
+        {
+            var server = _databaseService.GetObject<Server>(ctx.Guild.Id);
+
+            var embed = new DiscordEmbedBuilder()
+                .WithColor(DiscordColor.Purple);
+
+            if (server.Tags.TryGetValue(name, out var tag))
+            {
+                CheckPermissions(ctx.Member, tag);
+                tag.AuthorId = ctx.User.Id;
+                tag.Name = name;
+                tag.Message = message;
+                embed.WithTitle("Tag updated")
+                    .WithDescription($"Updated the message for the tag {Formatter.InlineCode(name)}");
+            }
+            else
+            {
+                embed.WithTitle("Tag not found")
+                    .WithDescription($"Couldn't find the tag {Formatter.InlineCode(name)}");
+                await ctx.RespondAsync(embed: embed);
+                return;
+            }
+
+            await ctx.RespondAsync(embed: embed);
+            
+            server.Tags[name] = tag;
+            _databaseService.AddOrUpdateObject(server, server.Id);
+        }
+
+        [Command("alias")]
+        public async Task AliasAsync(CommandContext ctx)
+        {
+            var embed = new DiscordEmbedBuilder()
+                .WithColor(DiscordColor.Purple)
+                .WithTitle("Edit a tag")
+                .WithDescription(
+                    $"What is the name of the tag? (Type {Formatter.InlineCode("cancel")} to stop");
+            await ctx.RespondAsync(embed: embed);
+            var name = (await _interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.User.Id)).Message.Content;
+            if (string.Equals(name, "cancel", StringComparison.OrdinalIgnoreCase))
+            {
+                embed.WithTitle("Cancelled")
+                    .WithDescription("Cancelled the tag creation");
+                await ctx.RespondAsync(embed: embed);
+                return;
+            }
+
+            await AliasAsync(ctx, name);
+        }
+
+        [Command("alias")]
+        public async Task AliasAsync(CommandContext ctx, [RemainingText] string name)
+        {
+            var embed = new DiscordEmbedBuilder()
+                .WithColor(DiscordColor.Purple)
+                .WithTitle("Edit a tag")
+                .WithDescription(
+                    $"What should be the new name of the tag? (Type {Formatter.InlineCode("cancel")} to stop");
+            await ctx.RespondAsync(embed: embed);
+            var newName = (await _interactivity.WaitForMessageAsync(x => x.Author.Id == ctx.User.Id)).Message.Content;
+            if (string.Equals(newName, "cancel", StringComparison.OrdinalIgnoreCase))
+            {
+                embed.WithTitle("Cancelled")
+                    .WithDescription("Cancelled the tag creation");
+                await ctx.RespondAsync(embed: embed);
+                return;
+            }
+
+            await AliasAsync(ctx, name, newName);
+        }
+        
+        [Command("alias")]
+        public async Task AliasAsync(CommandContext ctx, string name, [RemainingText] string newname)
+        {
+            var server = _databaseService.GetObject<Server>(ctx.Guild.Id);
+
+            var embed = new DiscordEmbedBuilder()
+                .WithColor(DiscordColor.Purple);
+
+            if (server.Tags.TryGetValue(name, out var tag))
+            {
+                CheckPermissions(ctx.Member, tag);
+                embed.WithTitle("Tag updated")
+                    .WithDescription($"Updated the name of the tag {Formatter.InlineCode(tag.Name)} to {Formatter.InlineCode(newname)}");
+                tag.AuthorId = ctx.User.Id;
+                tag.Name = newname;
+            }
+            else
+            {
+                embed.WithTitle("Tag not found")
+                    .WithDescription($"Couldn't find the tag {Formatter.InlineCode(name)}");
+                await ctx.RespondAsync(embed: embed);
+                return;
+            }
+
+            await ctx.RespondAsync(embed: embed);
+            
+            server.Tags[newname] = tag;
+            server.Tags.Remove(name);
+            _databaseService.AddOrUpdateObject(server, server.Id);
         }
 
         private void CheckPermissions(DiscordMember user, Tag tag)
