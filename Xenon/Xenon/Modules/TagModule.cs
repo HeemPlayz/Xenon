@@ -304,12 +304,7 @@ namespace Xenon.Modules
             if (target == null) return;
             if (user.Id == tag.AuthorId) return;
 
-            var targetUserRole = target.Roles.FirstOrDefault();
-            var targetUserHierachy = targetUserRole == null ? 0 : targetUserRole.Position;
-            var userRole = user.Roles.FirstOrDefault();
-            var userHierachy = userRole == null ? 0 : userRole.Position;
-
-            if (targetUserHierachy >= userHierachy)
+            if (target.Hierarchy >= user.Hierarchy)
                 throw new HierachyException(
                     "This tag doesn't belong to you and you have not enough permissions to claim it");
         }

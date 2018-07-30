@@ -97,7 +97,7 @@ namespace Xenon.Modules
             await ctx.Channel.DeleteMessagesAsync(messages);
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("Channel cleared")
-                .WithDescription($"Deleted the last {Formatter.InlineCode($"{messages.Count() - 1}")}")
+                .WithDescription($"Deleted the last {Formatter.InlineCode($"{messages.Count() - 1}")} messages")
                 .WithColor(DiscordColor.Purple);
             var message = await ctx.RespondAsync(embed: embed);
             await _logService.SendLogMessage("Chat cleared",

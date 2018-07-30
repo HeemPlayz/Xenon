@@ -2,6 +2,7 @@
 
 using System;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Web;
 using DSharpPlus.CommandsNext;
@@ -96,8 +97,9 @@ namespace Xenon.Modules
         [Command("meme")]
         public async Task MemeAsync(CommandContext ctx)
         {
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Token {_configurationService.KsoftApiKey}");
-
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", $"{_configurationService.KsoftApiKey}");
+            await ctx.RespondAsync(embed: new DiscordEmbedBuilder().WithImageUrl(
+                "https://cdn.discordapp.com/attachments/381870553235193857/473215081623060510/ckskhr.webm"));
             JObject data;
             do
             {
@@ -112,7 +114,7 @@ namespace Xenon.Modules
 
             await ctx.RespondAsync(embed: embed);
 
-            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+            _httpClient.DefaultRequestHeaders.Authorization = null;
         }
 
         [Command("out")]

@@ -62,7 +62,7 @@ namespace Xenon.Modules
                     $"\n{Formatter.Bold("Created On")} ❯ {ctx.Guild.CreationTimestamp:G}",
                     true)
                 .AddField($"Members - {ctx.Guild.MemberCount}",
-                    $"{Formatter.Bold("< ❯online:456907751420067866> Online")} ❯ {ctx.Guild.Members.Count(x => x.Presence?.Status == UserStatus.Online && !x.IsBot)}" +
+                    $"{Formatter.Bold("<:online:456907751420067866> Online")} ❯ {ctx.Guild.Members.Count(x => x.Presence?.Status == UserStatus.Online && !x.IsBot)}" +
                     $"\n{Formatter.Bold("<:idle:456910024984363014> Idle")} ❯ {ctx.Guild.Members.Count(x => x.Presence?.Status == UserStatus.Idle && !x.IsBot)}" +
                     $"\n{Formatter.Bold("<:donotdisturb:456910051345563678> DoNotDisturb")} ❯ {ctx.Guild.Members.Count(x => x.Presence?.Status == UserStatus.DoNotDisturb && !x.IsBot)}" +
                     $"\n{Formatter.Bold("<:streaming:456910068839874560> Streaming")} ❯ {ctx.Guild.Members.Count(x => x.Presence?.Activity.ActivityType == ActivityType.Streaming && !x.IsBot)}" +

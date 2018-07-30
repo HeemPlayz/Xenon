@@ -71,6 +71,8 @@ namespace Xenon.Core
                 .AddSingleton<LogService>()
                 .AddSingleton<LevelingService>()
                 .AddSingleton<StatisticsUpdateServer>()
+                .AddSingleton<RedditService>()
+                .AddSingleton<ImageService>()
                 .BuildServiceProvider();
             _commandsNext = _client.UseCommandsNext(new CommandsNextConfiguration
             {
