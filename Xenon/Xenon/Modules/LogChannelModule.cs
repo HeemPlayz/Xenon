@@ -15,6 +15,7 @@ namespace Xenon.Modules
     [Group("logchannel")]
     [Aliases("lchannel", "logc", "lc")]
     [RequireGuild]
+    [CommandCategory(CommandCategory.Settings)]
     public class LogChannelModule : CommandModule
     {
         private readonly DatabaseService _databaseService;

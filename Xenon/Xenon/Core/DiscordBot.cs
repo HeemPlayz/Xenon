@@ -17,6 +17,7 @@ using DSharpPlus.Lavalink;
 using Microsoft.Extensions.DependencyInjection;
 using Xenon.Services;
 using Xenon.Services.External;
+using Xenon.Services.Nsfw;
 
 #endregion
 
@@ -67,12 +68,11 @@ namespace Xenon.Core
                 .AddSingleton(_random)
                 .AddSingleton(_configurationService)
                 .AddSingleton<DatabaseService>()
-                .AddSingleton<UtilService>()
                 .AddSingleton<LogService>()
                 .AddSingleton<LevelingService>()
                 .AddSingleton<StatisticsUpdateServer>()
                 .AddSingleton<RedditService>()
-                .AddSingleton<ImageService>()
+                .AddSingleton<NsfwService>()
                 .BuildServiceProvider();
             _commandsNext = _client.UseCommandsNext(new CommandsNextConfiguration
             {
@@ -92,6 +92,8 @@ namespace Xenon.Core
             // Registering Modules
             _commandsNext.RegisterCommands(Assembly.GetEntryAssembly());
 
+            _commandsNext.SetHelpFormatter<HelpFormatter>();
+
             // ModLog Events
             _client.ChannelCreated += _serviceProvider.GetService<LogService>().ChannelCreated;
             _client.ChannelDeleted += _serviceProvider.GetService<LogService>().ChannelDeleted;
@@ -108,6 +110,7 @@ namespace Xenon.Core
             _client.GuildCreated += _serviceProvider.GetService<StatisticsUpdateServer>().GuildUpdate;
             _client.GuildDeleted += _serviceProvider.GetService<StatisticsUpdateServer>().GuildUpdate;
             _client.Ready += _serviceProvider.GetService<StatisticsUpdateServer>().Ready;
+            _client.MessageCreated += _serviceProvider.GetService<LevelingService>().IncreaseUserXp;
 
             await _client.ConnectAsync();
             await _client.InitializeAsync();

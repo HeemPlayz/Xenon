@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus;
@@ -8,9 +9,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
-using Humanizer;
-using Sparrow.Platform.Posix;
-using Sparrow.Utils;
+using MoreLinq;
 using Xenon.Core;
 using Xenon.Services.External;
 
@@ -20,16 +19,15 @@ namespace Xenon.Modules
 {
     [Group("tag")]
     [RequireGuild]
+    [CommandCategory(CommandCategory.Settings)]
     public class TagModule : CommandModule
     {
         private readonly DatabaseService _databaseService;
-        private readonly UtilService _utilService;
         private readonly InteractivityExtension _interactivity;
 
-        public TagModule(DatabaseService databaseService, UtilService utilService, InteractivityExtension interactivity)
+        public TagModule(DatabaseService databaseService, InteractivityExtension interactivity)
         {
             _databaseService = databaseService;
-            _utilService = utilService;
             _interactivity = interactivity;
         }
 
@@ -49,7 +47,7 @@ namespace Xenon.Modules
             }
             else
             {
-                var bestMatchingTags = server.Tags.OrderBy(pair => _utilService.CalculateDifference(tag, pair.Key))
+                var bestMatchingTags = server.Tags.OrderBy(pair => tag.CalculateDifference(pair.Key))
                     .Take(3);
                 embed.WithTitle("Tag not found")
                     .WithDescription($"Couldn't find a tag for {Formatter.InlineCode(tag)}");
@@ -81,13 +79,13 @@ namespace Xenon.Modules
             }
             else
             {
-                tag = new Tag{AuthorId = ctx.User.Id, Name = name,Message = message, TimeStamp = DateTime.Now};
+                tag = new Tag {AuthorId = ctx.User.Id, Name = name, Message = message, TimeStamp = DateTime.Now};
                 embed.WithTitle("Tag added")
                     .WithDescription($"Added the tag {Formatter.InlineCode(tag.Name)}");
             }
 
             await ctx.RespondAsync(embed: embed);
-            
+
             server.Tags[name] = tag;
             _databaseService.AddOrUpdateObject(server, server.Id);
         }
@@ -137,21 +135,27 @@ namespace Xenon.Modules
             }
             else
             {
-                specificTag = new Tag{AuthorId = ctx.User.Id, Message = "None set", Name = tag, TimeStamp = DateTime.Now};
+                specificTag = new Tag
+                {
+                    AuthorId = ctx.User.Id,
+                    Message = "None set",
+                    Name = tag,
+                    TimeStamp = DateTime.Now
+                };
             }
 
-            
+
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("Tag claimed")
                 .WithColor(DiscordColor.Purple)
                 .WithDescription($"Claimed the tag {Formatter.InlineCode(specificTag.Name)}");
 
             await ctx.RespondAsync(embed: embed);
-            
+
             server.Tags[tag] = specificTag;
             _databaseService.AddOrUpdateObject(server, server.Id);
         }
-        
+
         [Command("edit")]
         public async Task EditAsync(CommandContext ctx)
         {
@@ -220,7 +224,7 @@ namespace Xenon.Modules
             }
 
             await ctx.RespondAsync(embed: embed);
-            
+
             server.Tags[name] = tag;
             _databaseService.AddOrUpdateObject(server, server.Id);
         }
@@ -266,7 +270,7 @@ namespace Xenon.Modules
 
             await AliasAsync(ctx, name, newName);
         }
-        
+
         [Command("alias")]
         public async Task AliasAsync(CommandContext ctx, string name, [RemainingText] string newname)
         {
@@ -279,7 +283,8 @@ namespace Xenon.Modules
             {
                 CheckPermissions(ctx.Member, tag);
                 embed.WithTitle("Tag updated")
-                    .WithDescription($"Updated the name of the tag {Formatter.InlineCode(tag.Name)} to {Formatter.InlineCode(newname)}");
+                    .WithDescription(
+                        $"Updated the name of the tag {Formatter.InlineCode(tag.Name)} to {Formatter.InlineCode(newname)}");
                 tag.AuthorId = ctx.User.Id;
                 tag.Name = newname;
             }
@@ -292,10 +297,35 @@ namespace Xenon.Modules
             }
 
             await ctx.RespondAsync(embed: embed);
-            
+
             server.Tags[newname] = tag;
             server.Tags.Remove(name);
             _databaseService.AddOrUpdateObject(server, server.Id);
+        }
+
+        [Command("all")]
+        public async Task AllTagsAsync(CommandContext ctx)
+        {
+            var server = _databaseService.GetObject<Server>(ctx.Guild.Id);
+
+            var pages = new List<Page>();
+            var pageIndex = 1;
+            var seperatedTags = server.Tags.Batch(1);
+            foreach (var tags in seperatedTags)
+            {
+                var tagList = tags.Select(tag =>
+                        $"❯ {tag.Value.Name} ({Math.Round((DateTime.Now - tag.Value.TimeStamp).TotalDays, 2)} days ago)")
+                    .ToList();
+                var embed = new DiscordEmbedBuilder()
+                    .WithTitle("Tags")
+                    .WithDescription(string.Join("\n", tagList))
+                    .WithFooter($"Page {pageIndex}/{seperatedTags.Count()}")
+                    .WithColor(DiscordColor.Purple);
+                pages.Add(new Page {Embed = embed});
+                pageIndex++;
+            }
+
+            await _interactivity.SendPaginatedMessage(ctx.Channel, ctx.User, pages);
         }
 
         private void CheckPermissions(DiscordMember user, Tag tag)

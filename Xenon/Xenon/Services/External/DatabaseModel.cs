@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using DSharpPlus.Entities;
 using Newtonsoft.Json;
+using Xenon.Core;
 
 #endregion
 
@@ -12,7 +13,7 @@ namespace Xenon.Services.External
     public class User
     {
         public string Username { get; set; }
-        public string Id { get; set; }
+        private string Id { get; set; }
 
         [JsonIgnore]
         public ulong UserId
@@ -34,6 +35,7 @@ namespace Xenon.Services.External
     public class Server
     {
         public ChannelBlockingType BlockingType = ChannelBlockingType.None;
+        public HashSet<CommandCategory> DisabledCategories = new HashSet<CommandCategory>();
         public HashSet<string> JoinMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public HashSet<string> LeaveMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public bool LevelingState = true;
@@ -46,7 +48,7 @@ namespace Xenon.Services.External
         public Dictionary<ulong, Userxp> Userxps = new Dictionary<ulong, Userxp>();
         public HashSet<ulong> Whitelist = new HashSet<ulong>();
         public string Name { get; set; }
-        public string Id { get; set; }
+        public string Id { get; private set; }
 
         [JsonIgnore]
         public ulong ServerId
@@ -88,7 +90,7 @@ namespace Xenon.Services.External
         private string Id { get; set; }
 
         [JsonIgnore]
-        private ulong? UserId
+        public ulong? UserId
         {
             get => Id == null ? (ulong?) null : ulong.Parse(Id);
             set => Id = $"{value}";

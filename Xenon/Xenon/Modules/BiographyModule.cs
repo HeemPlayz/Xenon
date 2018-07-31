@@ -15,6 +15,7 @@ namespace Xenon.Modules
 {
     [Group("biography")]
     [Aliases("bio")]
+    [CommandCategory(CommandCategory.Settings)]
     public class BiographyModule : CommandModule
     {
         private readonly DatabaseService _databaseService;

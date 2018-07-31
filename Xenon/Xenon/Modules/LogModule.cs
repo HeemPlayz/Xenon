@@ -17,15 +17,14 @@ using Xenon.Services.External;
 
 namespace Xenon.Modules
 {
+    [CommandCategory(CommandCategory.Settings)]
     public class LogModule : CommandModule
     {
         private readonly DatabaseService _databaseService;
-        private readonly LogService _logService;
 
-        public LogModule(DatabaseService databaseService, LogService logService)
+        public LogModule(DatabaseService databaseService)
         {
             _databaseService = databaseService;
-            _logService = logService;
         }
 
         [Command("reason")]
@@ -115,7 +114,7 @@ namespace Xenon.Modules
                 pageIndex++;
             }
 
-            await ctx.Client.GetInteractivity().SendPaginatedMessage(ctx.Channel, ctx.User, pages, null,
+            await _interactivityExtension.SendPaginatedMessage(ctx.Channel, ctx.User, pages, null,
                 TimeoutBehaviour.DeleteMessage, new PaginationEmojis(ctx.Client));
         }
 
@@ -168,7 +167,7 @@ namespace Xenon.Modules
             {
                 var embed = new DiscordEmbedBuilder()
                     .WithTitle("No log entrys")
-                    .WithDescription($"There are no log entrys on this server yet")
+                    .WithDescription("There are no log entrys on this server yet")
                     .WithColor(DiscordColor.Purple);
                 await ctx.RespondAsync(embed: embed);
                 return;

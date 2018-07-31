@@ -2,6 +2,9 @@
 
 using System;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using Raven.Client.Documents;
 using Raven.Client.ServerWide;
 using Raven.Client.ServerWide.Operations;
@@ -31,6 +34,17 @@ namespace Xenon.Services.External
             using (var session = Store.OpenSession())
             {
                 var obj = session.Load<T>($"{id}") ?? new T();
+                switch (obj)
+                {
+                    case Server server:
+                        server.ServerId = (ulong) id;
+                        obj = server as T;
+                        break;
+                    case User user:
+                        user.UserId = (ulong) id;
+                        obj = user as T;
+                        break;
+                }
                 return obj;
             }
         }

@@ -1,16 +1,12 @@
 ﻿#region
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.Interactivity;
-using MoreLinq;
-using Sparrow.Platform.Posix.macOS;
 using Xenon.Core;
 using Xenon.Services.External;
 
@@ -18,27 +14,24 @@ using Xenon.Services.External;
 
 namespace Xenon.Modules
 {
+    [CommandCategory(CommandCategory.Moderation)]
+    [RequireGuild]
     public class ModerationModule : CommandModule
     {
-        private readonly DatabaseService _databaseService;
         private readonly LogService _logService;
-        private readonly UtilService _utilService;
 
-        public ModerationModule(UtilService utilService, LogService logService, DatabaseService databaseService)
+        public ModerationModule(LogService logService)
         {
-            _utilService = utilService;
             _logService = logService;
-            _databaseService = databaseService;
         }
 
         [Command("ban")]
         [Description("Bans a user")]
         [RequirePermissions(Permissions.BanMembers)]
-        [RequireGuild]
         public async Task BanAsync(CommandContext ctx,
             DiscordMember user, [RemainingText] string reason = null)
         {
-            _utilService.CheckHierachy(user, ctx, "ban", "banned");
+            user.CheckHierachy(ctx, "ban", "banned");
 
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("You got banned")
@@ -62,10 +55,9 @@ namespace Xenon.Modules
         [Command("kick")]
         [Description("Kicks a user")]
         [RequirePermissions(Permissions.KickMembers)]
-        [RequireGuild]
         public async Task KickAsync(CommandContext ctx, DiscordMember user, [RemainingText] string reason = null)
         {
-            _utilService.CheckHierachy(user, ctx, "kick", "kicked");
+            user.CheckHierachy(ctx, "kick", "kicked");
 
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("You got kicked")
@@ -74,7 +66,6 @@ namespace Xenon.Modules
                 .WithColor(DiscordColor.Purple);
 
             await user.SendMessageAsync(embed: embed);
-
             await user.RemoveAsync(reason);
 
             var auditLog = (await ctx.Guild.GetAuditLogsAsync(1, action_type: AuditLogActionType.Kick)).First();
@@ -89,7 +80,6 @@ namespace Xenon.Modules
         [Command("clear")]
         [Description("Clears a specific amount of messages from the current channel")]
         [RequirePermissions(Permissions.ManageMessages)]
-        [RequireGuild]
         public async Task ClearAsync(CommandContext ctx, int count)
         {
             var messages = (await ctx.Channel.GetMessagesAsync(count + 1)).AsEnumerable();
@@ -109,7 +99,6 @@ namespace Xenon.Modules
         [Command("bulk")]
         [Description("Deletes all messages from a channel")]
         [RequirePermissions(Permissions.ManageChannels)]
-        [RequireGuild]
         [Hidden]
         public async Task BulkAsync(CommandContext ctx)
         {
@@ -117,15 +106,11 @@ namespace Xenon.Modules
             var channel = await ctx.Guild.CreateTextChannelAsync(ctx.Channel.Name, ctx.Channel.Parent,
                 ctx.Channel.PermissionOverwrites.AsEnumerable().Select(async x =>
                 {
-                    var overwrite = new DiscordOverwriteBuilder{Allowed = x.Allowed, Denied = x.Denied};
+                    var overwrite = new DiscordOverwriteBuilder {Allowed = x.Allowed, Denied = x.Denied};
                     if (x.Type == OverwriteType.Member)
-                    {
                         overwrite.For(await x.GetMemberAsync());
-                    }
                     else
-                    {
                         overwrite.For(await x.GetRoleAsync());
-                    }
 
                     return overwrite;
                 }).Select(x => x.Result), ctx.Channel.IsNSFW);

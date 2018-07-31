@@ -8,6 +8,8 @@ using System.Web;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using GiphyDotNet.Manager;
+using GiphyDotNet.Model.Parameters;
 using Newtonsoft.Json.Linq;
 using Xenon.Core;
 using Xenon.Services.External;
@@ -16,15 +18,18 @@ using Xenon.Services.External;
 
 namespace Xenon.Modules
 {
+    [CommandCategory(CommandCategory.Fun)]
     public class FunModule : CommandModule
     {
         private readonly ConfigurationService _configurationService;
+        private readonly Giphy _giphyClient;
         private readonly HttpClient _httpClient;
 
         public FunModule(HttpClient httpClient, ConfigurationService configurationService)
         {
             _httpClient = httpClient;
             _configurationService = configurationService;
+            _giphyClient = new Giphy(_configurationService.GiphyApiKey);
         }
 
         [Command("dog")]
@@ -97,7 +102,8 @@ namespace Xenon.Modules
         [Command("meme")]
         public async Task MemeAsync(CommandContext ctx)
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", $"{_configurationService.KsoftApiKey}");
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Token", $"{_configurationService.KsoftApiKey}");
             await ctx.RespondAsync(embed: new DiscordEmbedBuilder().WithImageUrl(
                 "https://cdn.discordapp.com/attachments/381870553235193857/473215081623060510/ckskhr.webm"));
             JObject data;
@@ -122,7 +128,7 @@ namespace Xenon.Modules
         public async Task OutAsync(CommandContext ctx, DiscordUser user)
         {
             var embed = new DiscordEmbedBuilder()
-                .WithDescription($"{user.Mention}  ❯point_right::skin-tone-1 ❯  ❯door ❯")
+                .WithDescription($"{user.Mention}  :point_right::skin-tone-1:  :door:")
                 .WithColor(DiscordColor.Purple);
             await ctx.RespondAsync(embed: embed);
         }
@@ -142,9 +148,23 @@ namespace Xenon.Modules
         [Aliases("showgoogle", "sg", "showg", "sgoogle")]
         public async Task ShowGoogleAsync(CommandContext ctx, [RemainingText] string query)
         {
-            new string('a', 2);
             var url = $"http://lmgtfy.com/?q={HttpUtility.UrlEncode(query)}";
             await ctx.RespondAsync(url);
+        }
+
+        [Command("gif")]
+        public async Task GifAsync(CommandContext ctx, [RemainingText] string tag = null)
+        {
+            var randomParameter = new RandomParameter
+            {
+                Tag = tag
+            };
+            var gif = await _giphyClient.RandomGif(randomParameter);
+            var embed = new DiscordEmbedBuilder()
+                .WithColor(DiscordColor.Purple)
+                .WithImageUrl(gif.Data.ImageUrl);
+
+            await ctx.RespondAsync(embed: embed);
         }
     }
 }

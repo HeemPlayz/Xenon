@@ -8,6 +8,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Humanizer;
 using Xenon.Core;
 using Xenon.Services;
 using Xenon.Services.External;
@@ -16,6 +17,7 @@ using Xenon.Services.External;
 
 namespace Xenon.Modules
 {
+    [CommandCategory(CommandCategory.General)]
     public class GeneralModule : CommandModule
     {
         private readonly ConfigurationService _configurationService;
@@ -59,7 +61,7 @@ namespace Xenon.Modules
                     $"\n{Formatter.Bold("Afk Channel")} ❯ {(ctx.Guild.AfkChannel == null ? "None" : ctx.Guild.AfkChannel.Mention)}" +
                     $"\n{Formatter.Bold("Afk Timeout")} ❯ {ctx.Guild.AfkTimeout} minutes" +
                     $"\n{Formatter.Bold("Highest Role")} ❯ {ctx.Guild.Roles.OrderByDescending(x => x.Position).First().Mention}" +
-                    $"\n{Formatter.Bold("Created On")} ❯ {ctx.Guild.CreationTimestamp:G}",
+                    $"\n{Formatter.Bold("Created On")} ❯ {ctx.Guild.CreationTimestamp.Humanize()}",
                     true)
                 .AddField($"Members - {ctx.Guild.MemberCount}",
                     $"{Formatter.Bold("<:online:456907751420067866> Online")} ❯ {ctx.Guild.Members.Count(x => x.Presence?.Status == UserStatus.Online && !x.IsBot)}" +
@@ -92,7 +94,7 @@ namespace Xenon.Modules
                 .WithDescription($"[Official Server]({_configurationService.BotDiscordInviteLink})" +
                                  $"\n[Invite](https://discordapp.com/oauth2/authorize?client_id={ctx.Client.CurrentUser.Id}&scope=bot&permissions=2146958591)" +
                                  $"\n{Formatter.Bold("Shards")} ❯ {ctx.Client.ShardCount}" +
-                                 $"\n{Formatter.Bold("Uptime")} ❯ {DateTime.Now - Process.GetCurrentProcess().StartTime:G}" +
+                                 $"\n{Formatter.Bold("Last Restart")} ❯ {Process.GetCurrentProcess().StartTime.Humanize()}" +
                                  $"\n{Formatter.Bold("Guilds")} ❯ {ctx.Client.Guilds.Count}" +
                                  $"\n{Formatter.Bold("Users")} ❯ {ctx.Client.Guilds.Values.Sum(x => x.MemberCount)}" +
                                  $"\n{Formatter.Bold("Latency")} ❯ {ctx.Client.Ping}ms" +
@@ -129,7 +131,7 @@ namespace Xenon.Modules
                 }
 
                 description +=
-                    $"{i - uprank} ❯ {user.Mention}\nLevel ❯ {entry.Value.Level} | Xp ❯ {entry.Value.Xp}/{_levelingService.GetNeededXp(entry.Value.Level)}";
+                    $"{i - uprank + 1} ❯ {user.Mention}\nLevel ❯ {entry.Value.Level} | Xp ❯ {entry.Value.Xp}/{_levelingService.GetNeededXp(entry.Value.Level)}\n";
             }
 
             embed.WithDescription(description);
@@ -171,7 +173,7 @@ namespace Xenon.Modules
                                  $"\n{Formatter.Bold("Id")} ❯ {user.Id}" +
                                  $"\n{Formatter.Bold("Level")} ❯ {userxp.Level}" +
                                  $"\n{Formatter.Bold("Xp")} ❯ {userxp.Xp}/{_levelingService.GetNeededXp(userxp.Level)}" +
-                                 $"\n{Formatter.Bold("Joined On")} ❯ {user.JoinedAt:G}" +
+                                 $"\n{Formatter.Bold("Joined On")} ❯ {user.JoinedAt.Humanize()}" +
                                  $"\n{Formatter.Bold("Roles")} ❯ {string.Join(", ", user.Roles.Select(x => x.Mention).TakeWhile(x => x.Length <= 100))}");
 
             await ctx.RespondAsync(embed: embed);

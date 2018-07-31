@@ -1,37 +1,39 @@
-﻿using System;
-using System.IO;
-using System.Net;
+﻿#region
+
+using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
-using Microsoft.Win32.SafeHandles;
-using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Xenon.Core;
 using Xenon.Services.External;
+
+#endregion
 
 namespace Xenon.Services
 {
     public class RedditService
     {
-        private readonly HttpClient _httpClient;
         private readonly ConfigurationService _configurationService;
-        private readonly ImageService _imageService;
+        private readonly HttpClient _httpClient;
 
-        public RedditService(HttpClient httpClient, ConfigurationService configurationService, ImageService imageService)
+        public RedditService(HttpClient httpClient, ConfigurationService configurationService)
         {
             _httpClient = httpClient;
             _configurationService = configurationService;
-            _imageService = imageService;
         }
 
-        public async Task SendImageFromSubredditAsync(CommandContext ctx, string subreddit)
+        public async Task SendImageFromSubredditAsync(CommandContext ctx, bool gifs)
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", $"{_configurationService.KsoftApiKey}");
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Token", $"{_configurationService.KsoftApiKey}");
 
-            var image = await _imageService.ResolveImage(
-                await _httpClient.GetStringAsync($"https://api.ksoft.si/meme/rand-reddit/{subreddit}"));
+            var image = JsonConvert.DeserializeObject<Models.KsoftImage>(
+                await _httpClient.GetStringAsync(
+                    $"https://api.ksoft.si/meme/random-nsfw?gifs={(gifs ? "yes" : "no")}"));
+            Console.WriteLine(image.ImageUrl);
             var embed = new DiscordEmbedBuilder()
                 .WithTitle(image.Title)
                 .WithImageUrl(image.ImageUrl)
@@ -40,7 +42,7 @@ namespace Xenon.Services
                 .WithColor(DiscordColor.Purple);
 
             await ctx.RespondAsync(embed: embed);
-            
+
             _httpClient.DefaultRequestHeaders.Authorization = null;
         }
     }
