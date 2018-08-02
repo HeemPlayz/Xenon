@@ -34,15 +34,14 @@ namespace Xenon.Services.External
 
     public class Server
     {
+        public HashSet<ulong> Blacklist = new HashSet<ulong>();
         public ChannelBlockingType BlockingType = ChannelBlockingType.None;
         public HashSet<CommandCategory> DisabledCategories = new HashSet<CommandCategory>();
         public HashSet<string> JoinMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public HashSet<string> LeaveMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public bool LevelingState = true;
         public HashSet<string> LevelUpMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        public HashSet<ulong> MarkedChannels = new HashSet<ulong>();
         public Dictionary<ulong, ModLogItem> ModLog = new Dictionary<ulong, ModLogItem>();
-        public bool NsfwState = true;
         public HashSet<string> Prefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, Tag> Tags = new Dictionary<string, Tag>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<ulong, Userxp> Userxps = new Dictionary<ulong, Userxp>();

@@ -83,7 +83,8 @@ namespace Xenon.Core
                 IgnoreExtraArguments = false,
                 Services = _serviceProvider,
                 EnableDefaultHelp = true,
-                PrefixResolver = ResolvePrefix
+                PrefixResolver = ResolvePrefix,
+                DmHelp = true
             });
 
             // Handling Errors
@@ -111,6 +112,8 @@ namespace Xenon.Core
             _client.GuildDeleted += _serviceProvider.GetService<StatisticsUpdateServer>().GuildUpdate;
             _client.Ready += _serviceProvider.GetService<StatisticsUpdateServer>().Ready;
             _client.MessageCreated += _serviceProvider.GetService<LevelingService>().IncreaseUserXp;
+            _client.GuildMemberAdded += _serviceProvider.GetService<LogService>().GuildMemberAdded;
+            _client.GuildMemberRemoved += _serviceProvider.GetService<LogService>().GuildMemberLeft;
 
             await _client.ConnectAsync();
             await _client.InitializeAsync();
@@ -132,9 +135,9 @@ namespace Xenon.Core
 
                 switch (server.BlockingType)
                 {
-                    case ChannelBlockingType.Whitelist when !server.MarkedChannels.Contains(msg.ChannelId):
+                    case ChannelBlockingType.Whitelist when !server.Whitelist.Contains(msg.ChannelId):
                         return Task.FromResult(-1);
-                    case ChannelBlockingType.Blacklist when server.MarkedChannels.Contains(msg.ChannelId):
+                    case ChannelBlockingType.Blacklist when server.Blacklist.Contains(msg.ChannelId):
                         return Task.FromResult(-1);
                     case ChannelBlockingType.None:
                         break;

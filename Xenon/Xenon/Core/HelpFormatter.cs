@@ -10,6 +10,7 @@ using DSharpPlus.CommandsNext.Entities;
 using DSharpPlus.Entities;
 using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
+using MoreLinq;
 using Xenon.Services.External;
 
 #endregion
@@ -64,21 +65,29 @@ namespace Xenon.Core
                     .WithDescription(
                         $"Use {Formatter.InlineCode($"{_ctx.Prefix}help <command>")} to see more information about a specific command\n\n{Formatter.InlineCode("< >")} indicates a required parameter\n{Formatter.InlineCode("( )")} indicates an optional parameter");
 
+                var commandCount = 0;
+                var commands =
+                    _ctx.CommandsNext.RegisteredCommands.DistinctBy(x => x.Value.Name);
                 foreach (var value in Enum.GetValues(typeof(CommandCategory)))
                 {
                     var category = (CommandCategory) value;
-                    var commandList = (from subcommand in subcommands
+                    var commandList = (from subcommand in commands.Select(x => x.Value)
                         let attribute =
                             subcommand.CustomAttributes.OfType<CommandCategoryAttribute>().FirstOrDefault()?.Category ??
-                            subcommand.Module.ModuleType.GetCustomAttributes(true).OfType<CommandCategoryAttribute>()
-                                .FirstOrDefault()?.Category
+                            subcommand.Module.ModuleType.GetCustomAttributes(true)
+                                .OfType<CommandCategoryAttribute>()
+                                .FirstOrDefault()
+                                ?.Category
                         where attribute != null
                         where attribute == category
                         select Formatter.InlineCode(subcommand.Name)).ToList();
 
-                    if (commandList.Any())
-                        _embedBuilder.AddField($"{category.Humanize()}", string.Join(", ", commandList));
+                    if (!commandList.Any()) continue;
+                    _embedBuilder.AddField($"{category.Humanize()}", string.Join(", ", commandList));
+                    commandCount += commandList.Count;
                 }
+
+                _embedBuilder.WithFooter($"Loaded a total of {commandCount} commands");
             }
             else
             {

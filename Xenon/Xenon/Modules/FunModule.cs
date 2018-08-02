@@ -1,10 +1,12 @@
 ﻿#region
 
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Web;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
@@ -24,11 +26,13 @@ namespace Xenon.Modules
         private readonly ConfigurationService _configurationService;
         private readonly Giphy _giphyClient;
         private readonly HttpClient _httpClient;
+        private readonly Random _random;
 
-        public FunModule(HttpClient httpClient, ConfigurationService configurationService)
+        public FunModule(HttpClient httpClient, ConfigurationService configurationService, Random random)
         {
             _httpClient = httpClient;
             _configurationService = configurationService;
+            _random = random;
             _giphyClient = new Giphy(_configurationService.GiphyApiKey);
         }
 
@@ -64,6 +68,7 @@ namespace Xenon.Modules
         }
 
         [Command("8ball")]
+        [CheckParameters]
         public async Task EightballAsync(CommandContext ctx, [RemainingText] string question)
         {
             var data = JObject.Parse(await _httpClient.GetStringAsync("https://nekos.life/api/v2/8ball"));
@@ -95,8 +100,7 @@ namespace Xenon.Modules
                 "☞   ͜ʖ  ☞", "ᗒ ͟ʖᗕ", "/͠-. ͝-\\", "(´• ᴥ •`)", "(╯￢ ᗝ￢ ）╯︵ ┻━┻", "ᕦ(・ᨎ・)ᕥ", "◕ ε ◕", "【$ ³$】",
                 "(╭☞T ε T)╭☞"
             };
-            var random = new Random();
-            await ctx.RespondAsync(lennys[random.Next(0, lennys.Length - 1)]);
+            await ctx.RespondAsync(lennys[_random.Next(0, lennys.Length - 1)]);
         }
 
         [Command("meme")]
@@ -104,8 +108,6 @@ namespace Xenon.Modules
         {
             _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Token", $"{_configurationService.KsoftApiKey}");
-            await ctx.RespondAsync(embed: new DiscordEmbedBuilder().WithImageUrl(
-                "https://cdn.discordapp.com/attachments/381870553235193857/473215081623060510/ckskhr.webm"));
             JObject data;
             do
             {
@@ -146,6 +148,7 @@ namespace Xenon.Modules
 
         [Command("lmgtfy")]
         [Aliases("showgoogle", "sg", "showg", "sgoogle")]
+        [CheckParameters]
         public async Task ShowGoogleAsync(CommandContext ctx, [RemainingText] string query)
         {
             var url = $"http://lmgtfy.com/?q={HttpUtility.UrlEncode(query)}";
@@ -153,16 +156,27 @@ namespace Xenon.Modules
         }
 
         [Command("gif")]
-        public async Task GifAsync(CommandContext ctx, [RemainingText] string tag = null)
+        public async Task GifAsync(CommandContext ctx)
         {
-            var randomParameter = new RandomParameter
-            {
-                Tag = tag
-            };
-            var gif = await _giphyClient.RandomGif(randomParameter);
+            var gif = await _giphyClient.RandomGif(new RandomParameter());
             var embed = new DiscordEmbedBuilder()
                 .WithColor(DiscordColor.Purple)
                 .WithImageUrl(gif.Data.ImageUrl);
+
+            await ctx.RespondAsync(embed: embed);
+        }
+
+        [Command("gif")]
+        public async Task GifAsync(CommandContext ctx, [RemainingText] string query)
+        {
+            var gif = await _giphyClient.GifSearch(new SearchParameter {Query = query});
+            var embed = new DiscordEmbedBuilder()
+                .WithColor(DiscordColor.Purple);
+            if (!gif.Data.Any())
+                embed.WithTitle("No gif found")
+                    .WithDescription($"Couldn't find any gif for {Formatter.InlineCode(query)}");
+            else
+                embed.WithImageUrl(gif.Data[_random.Next(gif.Data.Length)].Images.Original.Url);
 
             await ctx.RespondAsync(embed: embed);
         }

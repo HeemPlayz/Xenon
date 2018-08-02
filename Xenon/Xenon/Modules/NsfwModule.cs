@@ -15,7 +15,6 @@ using Xenon.Services.Nsfw;
 
 namespace Xenon.Modules
 {
-    [RequireNsfw]
     [CommandCategory(CommandCategory.Nsfw)]
     public class NsfwModule : CommandModule
     {

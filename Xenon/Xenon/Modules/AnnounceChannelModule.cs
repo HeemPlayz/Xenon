@@ -12,43 +12,47 @@ using Xenon.Services.External;
 
 namespace Xenon.Modules
 {
-    [Group("logchannel")]
-    [Aliases("lchannel", "logc", "lc")]
+    [Group("announcechannel")]
+    [Aliases("achannel", "announcec", "ac")]
     [RequireGuild]
     [CommandCategory(CommandCategory.Settings)]
-    public class LogChannelModule : CommandModule
+    public class AnnounceChannelModule : CommandModule
     {
         private readonly DatabaseService _databaseService;
 
-        public LogChannelModule(DatabaseService databaseService)
+        public AnnounceChannelModule(DatabaseService databaseService)
         {
             _databaseService = databaseService;
         }
 
         [GroupCommand]
-        public async Task LogChannelAsync(CommandContext ctx)
+        public async Task AnnounceChannelAsync(CommandContext ctx)
         {
             var server = _databaseService.GetObject<Server>(ctx.Guild.Id);
-            var embed = new DiscordEmbedBuilder().WithTitle("Logchannel");
-            var channel = ctx.Guild.GetChannel(server.LogChannelId.GetValueOrDefault());
+            var embed = new DiscordEmbedBuilder().WithTitle("Announcechannel");
+            var channel = ctx.Guild.GetChannel(server.AnnounceChannelId.GetValueOrDefault());
             embed.WithColor(DiscordColor.Purple)
-                .WithDescription(channel == null ? "No logchannel set" : $"The logchannel is {channel.Mention}");
+                .WithDescription(channel == null
+                    ? "No announcechannel set"
+                    : $"The announcechannel is {channel.Mention}");
 
             await ctx.RespondAsync(embed: embed);
         }
 
         [GroupCommand]
         [RequireUserPermissions(Permissions.ManageChannels)]
-        public async Task LogChannelAsync(CommandContext ctx, DiscordChannel channel)
+        public async Task AnnounceChannelAsync(CommandContext ctx, DiscordChannel channel)
         {
             var channelPermissions = ctx.Guild.CurrentMember.PermissionsIn(channel);
             var embed = new DiscordEmbedBuilder();
             var server = _databaseService.GetObject<Server>(ctx.Guild.Id);
-            server.LogChannelId = channel.Id;
-            embed.WithTitle("Logchannel set")
+            server.AnnounceChannelId = channel.Id;
+            embed
+                .WithTitle("Announcechannel set")
                 .WithColor(DiscordColor.Purple)
-                .WithDescription($"Set the logchannel to {channel.Mention}");
+                .WithDescription($"Set the announcechannel to {channel.Mention}");
             _databaseService.AddOrUpdateObject(server, ctx.Guild.Id);
+
 
             await ctx.RespondAsync(embed: embed);
         }

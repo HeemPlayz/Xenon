@@ -14,11 +14,15 @@ namespace Xenon.Services.External
 {
     public class LogService
     {
+        private readonly ConfigurationService _configurationService;
         private readonly DatabaseService _databaseService;
+        private readonly Random _random;
 
-        public LogService(DatabaseService databaseService)
+        public LogService(DatabaseService databaseService, Random random, ConfigurationService configurationService)
         {
             _databaseService = databaseService;
+            _random = random;
+            _configurationService = configurationService;
         }
 
         public async Task ChannelCreated(ChannelCreateEventArgs e)
@@ -130,7 +134,7 @@ namespace Xenon.Services.External
             if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
 
             var description =
-                $"User ❯ {e.Member.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}\nChanges ❯";
+                $"User ❯ {e.Member.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}\nChanges ";
             if (e.NicknameBefore != e.NicknameAfter)
                 description +=
                     $"\n❯ Nickname ❯ {e.NicknameBefore ?? e.Member.Username} ⇒ {e.NicknameAfter ?? e.Member.Username}";
@@ -195,7 +199,7 @@ namespace Xenon.Services.External
 
             if (description == oldDescription) return;
 
-            await SendLogMessage("Channel updated", description, e.Guild, auditLog.CreationTimestamp);
+            await SendLogMessage("Role updated", description, e.Guild, auditLog.CreationTimestamp);
         }
 
         public async Task MessageDeleted(MessageDeleteEventArgs e)
@@ -232,6 +236,40 @@ namespace Xenon.Services.External
             var description =
                 $"Author ❯ {e.Author.Mention}\nChannel ❯ {e.Channel}\nBefore ❯ {e.MessageBefore.Content}\nAfter ❯ {e.Message.Content}";
             await SendLogMessage("Message updated", description, e.Guild, DateTimeOffset.Now);
+        }
+
+        public async Task GuildMemberAdded(GuildMemberAddEventArgs e)
+        {
+            var server = _databaseService.GetObject<Server>(e.Guild.Id);
+
+            if (!server.AnnounceChannelId.HasValue) return;
+
+            var channel = e.Guild.Channels.FirstOrDefault(x => x.Id == server.AnnounceChannelId.Value);
+
+            if (channel == null) return;
+
+            var message = server.JoinMessages.Any()
+                ? server.JoinMessages.ToList()[_random.Next(server.JoinMessages.Count)]
+                : _configurationService.DefaultWelcomeMessage;
+
+            await channel.SendMessageAsync(message.ToMessage(e));
+        }
+
+        public async Task GuildMemberLeft(GuildMemberRemoveEventArgs e)
+        {
+            var server = _databaseService.GetObject<Server>(e.Guild.Id);
+
+            if (!server.AnnounceChannelId.HasValue) return;
+
+            var channel = e.Guild.Channels.FirstOrDefault(x => x.Id == server.AnnounceChannelId.Value);
+
+            if (channel == null) return;
+
+            var message = server.LeaveMessages.Any()
+                ? server.JoinMessages.ToList()[_random.Next(server.JoinMessages.Count)]
+                : _configurationService.DefaultLeaveMessage;
+
+            await channel.SendMessageAsync(message.ToMessage(e));
         }
 
         public async Task SendLogMessage(string title, string description, DiscordGuild guild, DateTimeOffset timestamp)

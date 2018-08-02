@@ -145,5 +145,41 @@ namespace Xenon.Services.External
 
             return message;
         }
+
+        public static string ToMessage(this string message, GuildMemberAddEventArgs ctx)
+        {
+            var dictionary = new Dictionary<string, string>
+            {
+                {"%mention%", ctx.Member.Mention},
+                {
+                    "%user%",
+                    ctx.Guild.Members.FirstOrDefault(x => x.Id == ctx.Member.Id)?.DisplayName ?? ctx.Member.Username
+                },
+                {"%server%", ctx.Guild.Name}
+            };
+
+            foreach (var pair in dictionary)
+                message = message.Replace(pair.Key, pair.Value, StringComparison.OrdinalIgnoreCase);
+
+            return message;
+        }
+
+        public static string ToMessage(this string message, GuildMemberRemoveEventArgs ctx)
+        {
+            var dictionary = new Dictionary<string, string>
+            {
+                {"%mention%", ctx.Member.Mention},
+                {
+                    "%user%",
+                    ctx.Guild.Members.FirstOrDefault(x => x.Id == ctx.Member.Id)?.DisplayName ?? ctx.Member.Username
+                },
+                {"%server%", ctx.Guild.Name}
+            };
+
+            foreach (var pair in dictionary)
+                message = message.Replace(pair.Key, pair.Value, StringComparison.OrdinalIgnoreCase);
+
+            return message;
+        }
     }
 }

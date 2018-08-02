@@ -1,5 +1,6 @@
 ﻿#region
 
+using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 
 #endregion

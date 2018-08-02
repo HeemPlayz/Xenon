@@ -59,7 +59,7 @@ namespace Xenon.Modules
                     $"\n{Formatter.Bold("Id")} ❯ {ctx.Guild.Id}\n{Formatter.Bold("Owner")} ❯ {ctx.Guild.Owner.Mention}" +
                     $"\n{Formatter.Bold("Verification")} ❯ {ctx.Guild.VerificationLevel}" +
                     $"\n{Formatter.Bold("Afk Channel")} ❯ {(ctx.Guild.AfkChannel == null ? "None" : ctx.Guild.AfkChannel.Mention)}" +
-                    $"\n{Formatter.Bold("Afk Timeout")} ❯ {ctx.Guild.AfkTimeout} minutes" +
+                    $"\n{Formatter.Bold("Afk Timeout")} ❯ {ctx.Guild.AfkTimeout.Minutes()} minutes" +
                     $"\n{Formatter.Bold("Highest Role")} ❯ {ctx.Guild.Roles.OrderByDescending(x => x.Position).First().Mention}" +
                     $"\n{Formatter.Bold("Created On")} ❯ {ctx.Guild.CreationTimestamp.Humanize()}",
                     true)
@@ -93,6 +93,7 @@ namespace Xenon.Modules
                 .WithColor(DiscordColor.Purple)
                 .WithDescription($"[Official Server]({_configurationService.BotDiscordInviteLink})" +
                                  $"\n[Invite](https://discordapp.com/oauth2/authorize?client_id={ctx.Client.CurrentUser.Id}&scope=bot&permissions=2146958591)" +
+                                 $"\n[Listcord](https://listcord.com/bot/{ctx.Client.CurrentUser.Id})" +
                                  $"\n{Formatter.Bold("Shards")} ❯ {ctx.Client.ShardCount}" +
                                  $"\n{Formatter.Bold("Last Restart")} ❯ {Process.GetCurrentProcess().StartTime.Humanize()}" +
                                  $"\n{Formatter.Bold("Guilds")} ❯ {ctx.Client.Guilds.Count}" +

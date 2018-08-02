@@ -45,7 +45,9 @@ namespace Xenon.Services
                 userxp.Level++;
                 if (server.LevelingState)
                 {
-                    var message = server.LevelUpMessages.Any() ? server.LevelUpMessages.ToList()[_random.Next(server.LevelUpMessages.Count)] : _configurationService.DefaultLevelUpMessage;
+                    var message = server.LevelUpMessages.Any()
+                        ? server.LevelUpMessages.ToList()[_random.Next(server.LevelUpMessages.Count)]
+                        : _configurationService.DefaultLevelUpMessage;
                     await ctx.Channel.SendMessageAsync(message.ToMessage(ctx, userxp));
                 }
 
