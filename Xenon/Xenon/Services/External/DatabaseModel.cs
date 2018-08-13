@@ -2,13 +2,13 @@
 
 using System;
 using System.Collections.Generic;
-using DSharpPlus.Entities;
+using Discord;
 using Newtonsoft.Json;
 using Xenon.Core;
 
 #endregion
 
-namespace Xenon.Services.External
+namespace Xenon.Services
 {
     public class User
     {
@@ -35,19 +35,24 @@ namespace Xenon.Services.External
     public class Server
     {
         public HashSet<ulong> Blacklist = new HashSet<ulong>();
-        public ChannelBlockingType BlockingType = ChannelBlockingType.None;
+        public BlockingType BlockingType = BlockingType.None;
+
+        public Dictionary<ulong, Dictionary<ServerSettings, bool>> ChannelSettings =
+            new Dictionary<ulong, Dictionary<ServerSettings, bool>>();
+
         public HashSet<CommandCategory> DisabledCategories = new HashSet<CommandCategory>();
         public HashSet<string> JoinMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public HashSet<string> LeaveMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        public bool LevelingState = true;
         public HashSet<string> LevelUpMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<ulong, ModLogItem> ModLog = new Dictionary<ulong, ModLogItem>();
         public HashSet<string> Prefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<ServerSettings, bool> Settings = new Dictionary<ServerSettings, bool>();
         public Dictionary<string, Tag> Tags = new Dictionary<string, Tag>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<ulong, Userxp> Userxps = new Dictionary<ulong, Userxp>();
         public HashSet<ulong> Whitelist = new HashSet<ulong>();
         public string Name { get; set; }
         public string Id { get; private set; }
+        public Color? DefaultColor { get; set; } = PublicVariables.DefaultColor;
 
         [JsonIgnore]
         public ulong ServerId
@@ -129,7 +134,7 @@ namespace Xenon.Services.External
         }
 
         public string Reason { get; set; }
-        public AuditLogActionType ActionType { get; set; }
+        public ActionType ActionType { get; set; }
     }
 
     public class Tag
@@ -162,7 +167,17 @@ namespace Xenon.Services.External
         public DateTime TimeStamp { get; set; }
     }
 
-    public enum ChannelBlockingType
+    public enum ActionType
+    {
+        Kick,
+        Ban,
+        Mute,
+        Clear,
+        Bulk,
+        Unban
+    }
+
+    public enum BlockingType
     {
         Whitelist,
         Blacklist,

@@ -1,315 +1,313 @@
 ﻿#region
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
+using Discord;
+using Discord.Rest;
+using Discord.WebSocket;
+using Xenon.Core;
+using Xenon.Services.External;
 
 #endregion
 
-namespace Xenon.Services.External
+namespace Xenon.Services
 {
     public class LogService
     {
-        private readonly ConfigurationService _configurationService;
-        private readonly DatabaseService _databaseService;
+        private readonly DiscordShardedClient _client;
+        private readonly Configuration _configuration;
+        private readonly DatabaseService _database;
         private readonly Random _random;
+        private readonly ServerService _service;
 
-        public LogService(DatabaseService databaseService, Random random, ConfigurationService configurationService)
+        public LogService(DiscordShardedClient client, DatabaseService database, Random random, ServerService service,
+            Configuration configuration)
         {
-            _databaseService = databaseService;
+            _client = client;
+            _database = database;
             _random = random;
-            _configurationService = configurationService;
+            _service = service;
+            _configuration = configuration;
+
+            _client.ChannelCreated += ChannelCreated;
+            _client.ChannelDestroyed += ChannelDestroyed;
+            _client.ChannelUpdated += ChannelUpdated;
+            //_client.GuildMemberUpdated += GuildMemberUpdated;
+            _client.MessageDeleted += MessageDeleted;
+            _client.MessageUpdated += MessageUpdated;
+            _client.RoleCreated += RoleCreated;
+            _client.RoleDeleted += RoleDeleted;
+            _client.RoleUpdated += RoleUpdated;
+            _client.UserBanned += UserBanned;
+            _client.UserJoined += UserJoined;
+            _client.UserLeft += UserLeft;
+            _client.UserUnbanned += UserUnbanned;
         }
 
-        public async Task ChannelCreated(ChannelCreateEventArgs e)
+        private async Task UserUnbanned(SocketUser arg1, SocketGuild guild)
         {
-            if (!e.Guild.CurrentMember.Roles.Any(x =>
-                x.Permissions.HasPermission(Permissions.ViewAuditLog) ||
-                x.Permissions.HasPermission(Permissions.Administrator))) return;
-            var auditLog = (await e.Guild.GetAuditLogsAsync(1, action_type: AuditLogActionType.ChannelCreate)).First();
-            if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
+            if (!(arg1 is SocketGuildUser user)) return;
+            if (!GetAuditLogEntry(guild, out var auditLog, Discord.ActionType.Unban)) return;
 
-            await SendLogMessage("Channel created",
-                $"Channel ❯ {e.Channel.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}",
-                e.Guild, auditLog.CreationTimestamp);
+            var logItem = _service.AddLogItem(guild, ActionType.Unban, auditLog.Reason, auditLog.User.Id, user.Id);
+
+            await SendLog(guild, "Member Unanned",
+                $"User ❯ {user.Mention} ({user.Nickname ?? user.Username})\nResponsible User ❯ {auditLog.User.Mention}\nReason ❯ {auditLog.Reason ?? $"none, {auditLog.User.Mention} use {$"reason {logItem.LogId} <reason>".InlineCode()}"}\nId ❯ {auditLog.Id}");
         }
 
-        public async Task ChannelDeleted(ChannelDeleteEventArgs e)
+        private async Task UserLeft(SocketGuildUser user)
         {
-            if (!e.Guild.CurrentMember.Roles.Any(x =>
-                x.Permissions.HasPermission(Permissions.ViewAuditLog) ||
-                x.Permissions.HasPermission(Permissions.Administrator))) return;
-            var auditLog = (await e.Guild.GetAuditLogsAsync(1, action_type: AuditLogActionType.ChannelDelete)).First();
-            if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
-
-            await SendLogMessage("Channel deleted",
-                $"Channel ❯ {e.Channel.Name}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}",
-                e.Guild, auditLog.CreationTimestamp);
-        }
-
-        public async Task ChannelUpdated(ChannelUpdateEventArgs e)
-        {
-            if (!e.Guild.CurrentMember.Roles.Any(x =>
-                x.Permissions.HasPermission(Permissions.ViewAuditLog) ||
-                x.Permissions.HasPermission(Permissions.Administrator))) return;
-            var auditLog = (await e.Guild.GetAuditLogsAsync(1, action_type: AuditLogActionType.ChannelUpdate)).First();
-            if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
-
-            var description =
-                $"Channel ❯ {e.ChannelAfter.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}\nChanges ❯";
-            var oldDescription = description;
-            var properties = typeof(DiscordChannel).GetProperties().Where(x =>
-                x.PropertyType != typeof(IEnumerable<DiscordChannel>) &&
-                x.PropertyType != typeof(IReadOnlyList<DiscordOverwrite>) &&
-                x.PropertyType != typeof(IEnumerable<DiscordMember>));
-            foreach (var property in properties)
-            {
-                var propertyBefore = property.GetValue(e.ChannelBefore);
-                var propertyAfter = property.GetValue(e.ChannelAfter);
-                if (propertyBefore.ToString() != propertyAfter.ToString())
-                    description += $"\n❯ {property.Name} ❯ {propertyBefore} ⇒ {propertyAfter}";
-            }
-
-            if (description == oldDescription) return;
-
-            await SendLogMessage("Channel updated", description, e.Guild, auditLog.CreationTimestamp);
-        }
-
-        public async Task GuildBanAdded(GuildBanAddEventArgs e)
-        {
-            if (!e.Guild.CurrentMember.Roles.Any(x =>
-                x.Permissions.HasPermission(Permissions.ViewAuditLog) ||
-                x.Permissions.HasPermission(Permissions.Administrator))) return;
-            var auditLog = (await e.Guild.GetAuditLogsAsync(1, action_type: AuditLogActionType.Ban)).First();
-            if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
-
-            var logId = CreateLogEntry(auditLog, e.Member, AuditLogActionType.Ban);
-
-            await SendLogMessage("Member banned",
-                $"User ❯ {e.Member.Mention} ({e.Member.DisplayName})\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? $"none, {auditLog.UserResponsible.Mention} use {Formatter.InlineCode($"reason {logId} <reason>")}"}\nId ❯ {auditLog.Id}",
-                e.Guild, auditLog.CreationTimestamp);
-        }
-
-        public async Task GuildMemberRemoved(GuildMemberRemoveEventArgs e)
-        {
-            if (!e.Guild.CurrentMember.Roles.Any(x =>
-                x.Permissions.HasPermission(Permissions.ViewAuditLog) ||
-                x.Permissions.HasPermission(Permissions.Administrator))) return;
-            var auditLog = (await e.Guild.GetAuditLogsAsync(1)).First();
-            if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
-            if (auditLog.ActionType != AuditLogActionType.Kick) return;
-
-            var logId = CreateLogEntry(auditLog, e.Member, AuditLogActionType.Kick);
-
-            await SendLogMessage("Member kicked",
-                $"User ❯ {e.Member.Mention} ({e.Member.DisplayName})\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? $"none, {auditLog.UserResponsible.Mention} use {Formatter.InlineCode($"reason {logId} <reason>")}"}\nId ❯ {auditLog.Id}",
-                e.Guild, auditLog.CreationTimestamp);
-        }
-
-        public async Task GuildBanRemoved(GuildBanRemoveEventArgs e)
-        {
-            if (!e.Guild.CurrentMember.Roles.Any(x =>
-                x.Permissions.HasPermission(Permissions.ViewAuditLog) ||
-                x.Permissions.HasPermission(Permissions.Administrator))) return;
-            var auditLog = (await e.Guild.GetAuditLogsAsync(1, action_type: AuditLogActionType.Unban)).First();
-            if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
-
-            var logId = CreateLogEntry(auditLog, e.Member, AuditLogActionType.Ban);
-
-            await SendLogMessage("Member unbanned",
-                $"User ❯ {e.Member.Mention} ({e.Member.DisplayName})\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? $"none, {auditLog.UserResponsible.Mention} use {Formatter.InlineCode($"reason {logId} <reason>")}"}\nId ❯ {auditLog.Id}",
-                e.Guild, auditLog.CreationTimestamp);
-        }
-
-        public async Task GuildMemberUpdated(GuildMemberUpdateEventArgs e)
-        {
-            if (!e.Guild.CurrentMember.Roles.Any(x =>
-                x.Permissions.HasPermission(Permissions.ViewAuditLog) ||
-                x.Permissions.HasPermission(Permissions.Administrator))) return;
-            var auditLog = (await e.Guild.GetAuditLogsAsync(1)).First();
-            if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
-
-            var description =
-                $"User ❯ {e.Member.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}\nChanges ";
-            if (e.NicknameBefore != e.NicknameAfter)
-                description +=
-                    $"\n❯ Nickname ❯ {e.NicknameBefore ?? e.Member.Username} ⇒ {e.NicknameAfter ?? e.Member.Username}";
-
-            var difference = e.RolesBefore.Except(e.RolesAfter);
-            if (difference.Any())
-                description = difference.Aggregate(description,
-                    (current, role) => current + $"\nRemoved ❯ {role.Mention}");
-
-            difference = e.RolesAfter.Except(e.RolesBefore);
-            if (difference.Any())
-                description =
-                    difference.Aggregate(description, (current, role) => current + $"\nAdded ❯ {role.Mention}");
-
-            await SendLogMessage("Member updated", description, e.Guild, auditLog.CreationTimestamp);
-        }
-
-        public async Task GuildRoleCreated(GuildRoleCreateEventArgs e)
-        {
-            if (!e.Guild.CurrentMember.Roles.Any(x =>
-                x.Permissions.HasPermission(Permissions.ViewAuditLog) ||
-                x.Permissions.HasPermission(Permissions.Administrator))) return;
-            var auditLog = (await e.Guild.GetAuditLogsAsync(1, action_type: AuditLogActionType.RoleCreate)).First();
-            if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
-
-            await SendLogMessage("Role created",
-                $"Role ❯ {e.Role.Mention}\nResponsible User ❯ {auditLog.UserResponsible}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}",
-                e.Guild, auditLog.CreationTimestamp);
-        }
-
-        public async Task GuildRoleDeleted(GuildRoleDeleteEventArgs e)
-        {
-            if (!e.Guild.CurrentMember.Roles.Any(x =>
-                x.Permissions.HasPermission(Permissions.ViewAuditLog) ||
-                x.Permissions.HasPermission(Permissions.Administrator))) return;
-            var auditLog = (await e.Guild.GetAuditLogsAsync(1, action_type: AuditLogActionType.RoleCreate)).First();
-            if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
-
-            await SendLogMessage("Role deleted",
-                $"Role ❯ {e.Role.Name}\nResponsible User ❯ {auditLog.UserResponsible}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}",
-                e.Guild, auditLog.CreationTimestamp);
-        }
-
-        public async Task GuildRoleUpdated(GuildRoleUpdateEventArgs e)
-        {
-            if (!e.Guild.CurrentMember.Roles.Any(x => x.Permissions.HasPermission(Permissions.ViewAuditLog))) return;
-            var auditLog = (await e.Guild.GetAuditLogsAsync(1, action_type: AuditLogActionType.RoleUpdate)).First();
-            if (auditLog.UserResponsible.Id == e.Client.CurrentUser.Id) return;
-
-            var description =
-                $"Role ❯ {e.RoleAfter.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}\nChanges ❯";
-            var oldDescription = description;
-            var properties = typeof(DiscordRole).GetProperties()
-                .Where(x => x.PropertyType != typeof(int));
-            foreach (var property in properties)
-            {
-                var propertyBefore = property.GetValue(e.RoleBefore);
-                var propertyAfter = property.GetValue(e.RoleAfter);
-                if (propertyBefore.ToString() != propertyAfter.ToString())
-                    description += $"\n❯ {property.Name} ❯ {propertyBefore} ⇒ {propertyAfter}";
-            }
-
-            if (description == oldDescription) return;
-
-            await SendLogMessage("Role updated", description, e.Guild, auditLog.CreationTimestamp);
-        }
-
-        public async Task MessageDeleted(MessageDeleteEventArgs e)
-        {
-            if (!e.Guild.CurrentMember.Roles.Any(x => x.Permissions.HasPermission(Permissions.ViewAuditLog))) return;
-            var auditLog = (await e.Guild.GetAuditLogsAsync(1, action_type: AuditLogActionType.MessageDelete))
-                .FirstOrDefault();
-            string description;
-            if (auditLog == null || auditLog.CreationTimestamp < DateTimeOffset.Now - TimeSpan.FromSeconds(5))
-            {
-                if (e.Message.Content == null) return;
-                description =
-                    $"Author ❯ {e.Message.Author.Mention}\nResponsible User ❯ {e.Message.Author.Mention}\nChannel ❯ {e.Message.Channel.Mention}\nContent ❯ {e.Message.Content}\nReason ❯ none";
-
-                await SendLogMessage("Message deleted", description, e.Guild, DateTimeOffset.Now);
-            }
-            else
-            {
-                description =
-                    $"Author ❯ {e.Message.Author.Mention}\nResponsible User ❯ {auditLog.UserResponsible.Mention}\nChannel ❯ {e.Message.Channel.Mention}\nContent ❯ {e.Message.Content ?? "none"}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}";
-
-                await SendLogMessage("Message deleted", description, e.Guild, auditLog.CreationTimestamp);
-            }
-        }
-
-        public async Task MessageUpdated(MessageUpdateEventArgs e)
-        {
-            if (!e.Guild.CurrentMember.Roles.Any(x => x.Permissions.HasPermission(Permissions.ViewAuditLog))) return;
-            if (e.Author.Id == e.Client.CurrentUser.Id) return;
-
-            if (string.IsNullOrWhiteSpace(e.MessageBefore.Content) ||
-                string.IsNullOrWhiteSpace(e.Message.Content)) return;
-
-            var description =
-                $"Author ❯ {e.Author.Mention}\nChannel ❯ {e.Channel}\nBefore ❯ {e.MessageBefore.Content}\nAfter ❯ {e.Message.Content}";
-            await SendLogMessage("Message updated", description, e.Guild, DateTimeOffset.Now);
-        }
-
-        public async Task GuildMemberAdded(GuildMemberAddEventArgs e)
-        {
-            var server = _databaseService.GetObject<Server>(e.Guild.Id);
+            Server server = null;
+            _database.Execute(x => { server = x.Load<Server>($"{user.Guild.Id}"); });
+            if (!server.GetSetting(ServerSettings.LeaveMessage)) return;
 
             if (!server.AnnounceChannelId.HasValue) return;
+            var channel = user.Guild.GetTextChannel(server.AnnounceChannelId.Value);
+            if (channel == null) return;
 
-            var channel = e.Guild.Channels.FirstOrDefault(x => x.Id == server.AnnounceChannelId.Value);
+            var message = server.LeaveMessages.Any()
+                ? server.LeaveMessages.ToList()[_random.Next(server.LeaveMessages.Count)]
+                : _configuration.DefaultLeaveMessage;
 
+            await channel.SendMessageAsync(message.ToMessage(user, user.Guild));
+        }
+
+        private async Task UserJoined(SocketGuildUser user)
+        {
+            Server server = null;
+            _database.Execute(x => { server = x.Load<Server>($"{user.Guild.Id}"); });
+            if (!server.GetSetting(ServerSettings.JoinMessage)) return;
+
+            if (!server.AnnounceChannelId.HasValue) return;
+            var channel = user.Guild.GetTextChannel(server.AnnounceChannelId.Value);
             if (channel == null) return;
 
             var message = server.JoinMessages.Any()
                 ? server.JoinMessages.ToList()[_random.Next(server.JoinMessages.Count)]
-                : _configurationService.DefaultWelcomeMessage;
+                : _configuration.DefaultJoinMessage;
 
-            await channel.SendMessageAsync(message.ToMessage(e));
+            await channel.SendMessageAsync(message.ToMessage(user, user.Guild));
         }
 
-        public async Task GuildMemberLeft(GuildMemberRemoveEventArgs e)
+        private async Task UserBanned(SocketUser arg1, SocketGuild guild)
         {
-            var server = _databaseService.GetObject<Server>(e.Guild.Id);
+            if (!(arg1 is SocketGuildUser user)) return;
+            if (!GetAuditLogEntry(guild, out var auditLog, Discord.ActionType.Ban)) return;
 
-            if (!server.AnnounceChannelId.HasValue) return;
+            var logItem = _service.AddLogItem(guild, ActionType.Ban, auditLog.Reason, auditLog.User.Id, user.Id);
 
-            var channel = e.Guild.Channels.FirstOrDefault(x => x.Id == server.AnnounceChannelId.Value);
-
-            if (channel == null) return;
-
-            var message = server.LeaveMessages.Any()
-                ? server.JoinMessages.ToList()[_random.Next(server.JoinMessages.Count)]
-                : _configurationService.DefaultLeaveMessage;
-
-            await channel.SendMessageAsync(message.ToMessage(e));
+            await SendLog(guild, "Member Banned",
+                $"User ❯ {user.Mention} ({user.Nickname ?? user.Username})\nResponsible User ❯ {auditLog.User.Mention}\nReason ❯ {auditLog.Reason ?? $"none, {auditLog.User.Mention} use {$"reason {logItem.LogId} <reason>".InlineCode()}"}\nId ❯ {auditLog.Id}");
         }
 
-        public async Task SendLogMessage(string title, string description, DiscordGuild guild, DateTimeOffset timestamp)
+        private async Task RoleUpdated(SocketRole roleBefore, SocketRole roleAfter)
         {
-            var server = _databaseService.GetObject<Server>(guild.Id);
+            if (!GetAuditLogEntry(roleAfter.Guild, out var auditLog, Discord.ActionType.RoleUpdated)) return;
+            var data = (RoleUpdateAuditLogData) auditLog.Data;
+            var description =
+                $"Role ❯ {roleAfter.Mention}\nResponsible User ❯ {auditLog.User.Mention}\nReason ❯ {auditLog.Reason}\nId ❯ {auditLog.Id}\nChanges ❯";
+            foreach (var property in typeof(RoleEditInfo).GetProperties())
+            {
+                var before = property.GetValue(data.Before);
+                var after = property.GetValue(data.After);
+                if (before == null || after == null) continue;
+
+                if (before.ToString() != after.ToString()) description += $"\n❯ {property.Name}: {before} ⇒ {after}";
+            }
+
+            await SendLog(roleAfter.Guild, "Role Updated", description);
+        }
+
+        private async Task RoleDeleted(SocketRole role)
+        {
+            if (!GetAuditLogEntry(role.Guild, out var auditLog, Discord.ActionType.RoleDeleted)) return;
+            await SendLog(role.Guild, "Role Deleted",
+                $"Role ❯ {role.Name}\nResponsible User ❯ {auditLog.User.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}");
+        }
+
+        private async Task RoleCreated(SocketRole role)
+        {
+            if (!GetAuditLogEntry(role.Guild, out var auditLog, Discord.ActionType.RoleCreated)) return;
+            await SendLog(role.Guild, "Role Created",
+                $"Role ❯ {role.Mention}\nResponsible User ❯ {auditLog.User.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}");
+        }
+
+        private async Task MessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage messageAfter,
+            ISocketMessageChannel arg2)
+        {
+            if (messageAfter.Author.IsBot) return;
+            if (!(arg2 is ITextChannel channel)) return;
+            if (messageAfter.Author.Id == _client.CurrentUser.Id) return;
+            var message = await arg1.GetOrDownloadAsync();
+            if (message.Content == messageAfter.Content)
+                return;
+
+            var description =
+                $"Author ❯ {messageAfter.Author.Mention}\nId ❯ {messageAfter.Id}\nResponsible User ❯ {messageAfter.Author.Mention}\nChannel ❯ {channel.Mention}\nContent ❯ {message.Content} ⇒ {messageAfter.Content}\nReason ❯ none";
+
+            await SendLog(channel.Guild, "Message Updated", description);
+        }
+
+        private async Task MessageDeleted(Cacheable<IMessage, ulong> arg1, ISocketMessageChannel arg)
+        {
+            if (!(arg is ITextChannel channel)) return;
+            GetAuditLogEntry(channel.Guild, out var auditLog, Discord.ActionType.MessageDeleted);
+            var message = await arg1.GetOrDownloadAsync();
+            var bulkDelete = false;
+
+            var description =
+                "Author ❯ {0}\nId ❯ {1}\nResponsible User ❯ {2}\nChannel ❯ {3}\nContent ❯ {4}\nReason ❯ {5}";
+            if (auditLog != null && auditLog.Data is MessageDeleteAuditLogData auditLogData)
+            {
+                if (auditLogData.MessageCount == 1)
+                {
+                    description =
+                        $"Messages ❯ {auditLogData.MessageCount}\nResponsible User ❯ {auditLog.User.Mention}\nChannel ❯ {channel.Mention}\nReason ❯ {auditLog.Reason ?? "none"}";
+                    bulkDelete = true;
+                }
+                else
+                {
+                    if (message.Author.IsBot) return;
+                    description = string.Format(description, message.Author.Mention, message.Id,
+                        auditLog.User.Mention, channel.Mention, message.Content, auditLog.Reason ?? "none");
+                }
+            }
+            else
+            {
+                if (message.Author.IsBot) return;
+                description = string.Format(description, message.Author.Mention, message.Id,
+                    message.Author.Mention, channel.Mention, message.Content, "none");
+            }
+
+
+            await SendLog(channel.Guild, "Message Deleted", description);
+        }
+
+        public async Task GuildMemberUpdated(SocketGuildUser userBefore, SocketGuildUser userAfter)
+        {
+            if (userBefore.Status != userAfter.Status) return;
+            if (!GetAuditLogEntry(userAfter.Guild, out var auditLog, Discord.ActionType.MemberUpdated)) return;
+
+            var description =
+                $"User ❯ {userAfter.Mention}\nResponsible User ❯ {auditLog.User.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}\nChanges ❯";
+            var oldDescription = description;
+            if ((userBefore.Nickname ?? userBefore.Username) != (userAfter.Nickname ?? userAfter.Username))
+                description +=
+                    $"\n❯ Nickname: {userBefore.Nickname ?? userBefore.Username} ⇒ {userAfter.Nickname ?? userAfter.Username}";
+
+            var difference = userBefore.Roles.Except(userAfter.Roles);
+            if (difference.Any())
+                description = difference.Aggregate(description,
+                    (current, role) => current + $"\nRemoved ❯ {role.Mention}");
+
+            difference = userAfter.Roles.Except(userBefore.Roles);
+            if (difference.Any())
+                description =
+                    difference.Aggregate(description, (current, role) => current + $"\nAdded ❯ {role.Mention}");
+
+            if (description != oldDescription) await SendLog(userAfter.Guild, "Member Updated", description);
+        }
+
+        public async Task ChannelUpdated(SocketChannel arg1, SocketChannel arg2)
+        {
+            if (!(arg1 is IGuildChannel channelBefore) || !(arg2 is IGuildChannel channelAfter)) return;
+            if (!GetAuditLogEntry(channelAfter.Guild, out var auditLog, Discord.ActionType.ChannelUpdated)) return;
+            var description =
+                string.Format("Channel ❯ {1}\nResponsible User ❯ {0}\nReason ❯ {1}\nId ❯ {2}\nChanges ❯",
+                    auditLog.User.Mention, auditLog.Reason ?? "none", auditLog.Id);
+            string oldDescription;
+            Type T;
+            object before;
+            object after;
+            switch (arg1)
+            {
+                case ITextChannel textChannelBefore when arg2 is ITextChannel textChannelAfter:
+                    description = string.Format(description, textChannelAfter.Mention);
+                    oldDescription = description;
+                    T = typeof(SocketTextChannel);
+                    before = textChannelBefore;
+                    after = textChannelAfter;
+                    break;
+                case IVoiceChannel voiceChannelBefore when arg2 is IVoiceChannel voiceChannelAfter:
+                    description = string.Format(description, voiceChannelAfter.Name);
+                    oldDescription = description;
+                    T = typeof(SocketVoiceChannel);
+                    before = voiceChannelBefore;
+                    after = voiceChannelAfter;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            var properties = T.GetProperties();
+            foreach (var property in properties)
+            {
+                var propertyBefore = property.GetValue(before);
+                var propertyAfter = property.GetValue(after);
+                if (propertyBefore.ToString() != propertyAfter.ToString())
+                    description += $"\n❯ {property.Name}: {propertyBefore} ⇒ {propertyAfter}";
+            }
+
+            if (description == oldDescription) return;
+            await SendLog(channelAfter.Guild, "Channel Updated", description);
+        }
+
+        public async Task ChannelDestroyed(SocketChannel arg)
+        {
+            if (!(arg is IGuildChannel channel)) return;
+            if (!GetAuditLogEntry(channel.Guild, out var auditLog, Discord.ActionType.ChannelDeleted)) return;
+            var description =
+                $"Channel ❯ {channel.Name}\nResponsible User ❯ {auditLog.User.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}";
+
+            await SendLog(channel.Guild, "Channel Deleted", description);
+        }
+
+        public async Task ChannelCreated(SocketChannel arg)
+        {
+            if (!(arg is IGuildChannel channel)) return;
+            if (!GetAuditLogEntry(channel.Guild, out var auditLog, Discord.ActionType.ChannelCreated)) return;
+            var description =
+                $"Channel ❯ {{0}}\nResponsible User ❯ {auditLog.User.Mention}\nReason ❯ {auditLog.Reason ?? "none"}\nId ❯ {auditLog.Id}";
+            switch (arg)
+            {
+                case ITextChannel textChannel:
+                    description = string.Format(description, textChannel.Mention);
+                    break;
+                case IVoiceChannel voiceChannel:
+                    description = string.Format(description, voiceChannel.Name);
+                    break;
+            }
+
+            await SendLog(channel.Guild, "Channel Created", description);
+        }
+
+        public async Task SendLog(IGuild guild, string title, string description, DateTimeOffset? timeStamp = null,
+            Server server = null)
+        {
+            timeStamp = timeStamp ?? DateTimeOffset.Now;
+            if (server == null) _database.Execute(x => { server = server ?? x.Load<Server>($"{guild.Id}"); });
+
             if (!server.LogChannelId.HasValue) return;
 
-            var channel = guild.GetChannel(server.LogChannelId.Value);
+            var channel = await guild.GetTextChannelAsync(server.LogChannelId.Value);
             if (channel == null) return;
+            var currentUser = await guild.GetCurrentUserAsync();
+            if (!currentUser.GetPermissions(channel).SendMessages) return;
 
-            var embed = new DiscordEmbedBuilder
-            {
-                Title = title,
-                Description = description,
-                Color = DiscordColor.Purple,
-                Timestamp = timestamp
-            };
-            await channel.SendMessageAsync(embed: embed);
+            var embed = UtilService.NormalizeEmbed(title, description, ColorType.Normal, _random);
+            embed.WithTimestamp(timeStamp.Value);
+
+            await channel.SendMessageAsync(embed: embed.Build());
         }
 
-        public ulong CreateLogEntry(DiscordAuditLogEntry auditLog, DiscordMember user, AuditLogActionType actionType,
-            DiscordUser actionUser = null)
+        private bool GetAuditLogEntry(IGuild guild, out IAuditLogEntry auditLog, Discord.ActionType type)
         {
-            var server = _databaseService.GetObject<Server>(user.Guild.Id);
-
-            var logId = server.ModLog.Any() ? server.ModLog.Max(x => x.Value.LogId) + 1 : 0;
-
-            server.ModLog.Add(logId,
-                new ModLogItem
-                {
-                    ResponsibleUserId = actionUser == null ? auditLog.UserResponsible.Id : actionUser.Id,
-                    LogId = logId,
-                    Reason = auditLog.Reason,
-                    UserId = user.Id,
-                    ActionType = actionType
-                });
-
-            _databaseService.AddOrUpdateObject(server, user.Guild.Id);
-
-            return logId;
+            auditLog = guild.GetAuditLogsAsync(5).GetAwaiter().GetResult().FirstOrDefault(x => x.Action == type);
+            if (auditLog == null) return false;
+            var timeStamp = SnowflakeUtils.FromSnowflake(auditLog.Id);
+            if (timeStamp > DateTimeOffset.Now - TimeSpan.FromSeconds(5)) return false;
+            return auditLog.User.Id != _client.CurrentUser.Id;
         }
     }
 }

@@ -3,95 +3,88 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.Entities;
+using Discord;
+using Discord.Commands;
 using Newtonsoft.Json.Linq;
 using Xenon.Core;
-using Xenon.Services;
 using Xenon.Services.Nsfw;
 
 #endregion
 
 namespace Xenon.Modules
 {
+    [CheckNsfw]
     [CommandCategory(CommandCategory.Nsfw)]
-    public class NsfwModule : CommandModule
+    public class NsfwModule : CommandBase
     {
         private readonly HttpClient _httpClient;
         private readonly NsfwService _nsfwService;
         private readonly Random _random;
-        private readonly RedditService _redditService;
 
-        public NsfwModule(HttpClient httpClient, Random random, RedditService redditService, NsfwService nsfwService)
+        public NsfwModule(HttpClient httpClient, Random random, NsfwService nsfwService)
         {
             _httpClient = httpClient;
             _random = random;
-            _redditService = redditService;
             _nsfwService = nsfwService;
         }
 
         [Command("ass")]
-        public async Task AssAsync(CommandContext ctx)
+        [Summary("Sends some nice ass :)")]
+        public async Task AssAsync()
         {
             var random = _random.Next(6012);
             var data = JArray.Parse(await _httpClient.GetStringAsync($"http://api.obutts.ru/butts/{random}")).First;
-            var embed = new DiscordEmbedBuilder()
-                .WithImageUrl($"http://media.obutts.ru/{data["preview"]}")
-                .WithFooter($"Requested by {ctx.Member?.DisplayName ?? ctx.User.Username}", ctx.User.AvatarUrl)
-                .WithColor(DiscordColor.Purple);
+            var embed = new EmbedBuilder()
+                .WithImageUrl($"http://media.obutts.ru/{data["preview"]}");
 
-            await ctx.RespondAsync(embed: embed);
+            await ReplyEmbedAsync(embed, ColorType.Normal, true);
         }
 
         [Command("boobs")]
-        public async Task BoobsAsync(CommandContext ctx)
+        [Summary("Sends some nice boobs ;)")]
+        public async Task BoobsAsync()
         {
             var random = _random.Next(12965);
             var data = JArray.Parse(await _httpClient.GetStringAsync($"http://api.oboobs.ru/boobs/{random}")).First;
-            var embed = new DiscordEmbedBuilder()
-                .WithImageUrl($"http://media.oboobs.ru/{data["preview"]}")
-                .WithFooter($"Requested by {ctx.Member?.DisplayName ?? ctx.User.Username}", ctx.User.AvatarUrl)
-                .WithColor(DiscordColor.Purple);
+            var embed = new EmbedBuilder()
+                .WithImageUrl($"http://media.oboobs.ru/{data["preview"]}");
 
-            await ctx.RespondAsync(embed: embed);
+            await ReplyEmbedAsync(embed, ColorType.Normal, true);
         }
 
         [Command("hentai")]
-        public async Task HentaiAsync(CommandContext ctx)
+        [Summary("Sends a random hentai picture :D")]
+        public async Task HentaiAsync()
         {
-            var url =
-                $"{JObject.Parse(await _httpClient.GetStringAsync("https://nekos.life/api/v2/img/Random_hentai_gif"))["url"]}";
-            var embed = new DiscordEmbedBuilder()
-                .WithImageUrl(url)
-                .WithColor(DiscordColor.Purple);
-            await ctx.RespondAsync(embed: embed);
+            await _nsfwService.SendImageFromCategory(Context, "hentai");
         }
 
         [Command("nude")]
-        public async Task NudeAsync(CommandContext ctx)
+        [Summary("Sends some nice nudes :P")]
+        public async Task NudeAsync()
         {
-            await _nsfwService.SendImageFromCategory(ctx, "4k");
-            //await _redditService.SendImageFromSubredditAsync(ctx, false);
+            await _nsfwService.SendImageFromCategory(Context, "4k");
         }
 
         [Command("nudegif")]
-        public async Task NudeGifAsync(CommandContext ctx)
+        [Summary("Sends a nice nude gif d:")]
+        public async Task NudeGifAsync()
         {
-            await _nsfwService.SendImageFromCategory(ctx, "pgif");
-            //await _redditService.SendImageFromSubredditAsync(ctx, true);
+            await _nsfwService.SendImageFromCategory(Context, "pgif");
         }
 
         [Command("anal")]
-        public async Task AnalAsync(CommandContext ctx)
+        [Summary("Sends a carrot in a melon imao")]
+        public async Task AnalAsync()
         {
-            await _nsfwService.SendImageFromCategory(ctx, "anal");
+            await _nsfwService.SendImageFromCategory(Context, "anal");
         }
 
         [Command("pussy")]
-        public async Task PussyAsync(CommandContext ctx)
+        [Summary("Sends a melon with a hole")]
+        public async Task PussyAsync()
         {
-            await _nsfwService.SendImageFromCategory(ctx, "pussy");
+            await _nsfwService.SendImageFromCategory(Context, "pussy");
         }
     }
 }

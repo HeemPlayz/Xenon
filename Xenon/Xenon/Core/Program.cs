@@ -1,12 +1,6 @@
-﻿#region
-
-using Xenon.Core;
-
-#endregion
-
-namespace Xenon
+﻿namespace Xenon.Core
 {
-    internal class Program
+    public class Program
     {
         private static void Main()
         {

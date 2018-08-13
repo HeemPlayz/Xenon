@@ -1,10 +1,13 @@
 ﻿#region
 
+using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.Entities;
+using Discord;
+using Discord.Commands;
 using Newtonsoft.Json.Linq;
+using Xenon.Core;
+using Xenon.Services.External;
 
 #endregion
 
@@ -13,23 +16,24 @@ namespace Xenon.Services.Nsfw
     public class NsfwService
     {
         private readonly HttpClient _httpClient;
+        private readonly Random _random;
 
-        public NsfwService(HttpClient httpClient)
+        public NsfwService(HttpClient httpClient, Random random)
         {
             _httpClient = httpClient;
+            _random = random;
         }
 
-        public async Task SendImageFromCategory(CommandContext ctx, string category)
+        public async Task SendImageFromCategory(ShardedCommandContext context, string category)
         {
             var link =
                 $"{JObject.Parse(await _httpClient.GetStringAsync($"https://nekobot.xyz/api/image?type={category}"))["message"]}";
 
-            var embed = new DiscordEmbedBuilder()
-                .WithImageUrl(link)
-                .WithColor(DiscordColor.Purple)
-                .WithFooter($"Requested by {ctx.Member?.DisplayName ?? ctx.User.Username}", ctx.User.AvatarUrl);
+            var embed = new EmbedBuilder()
+                .WithImageUrl(link);
+            embed.NormalizeEmbed(ColorType.Normal, _random, true, context);
 
-            await ctx.RespondAsync(embed: embed);
+            await context.Channel.SendMessageAsync(embed: embed.Build());
         }
     }
 }

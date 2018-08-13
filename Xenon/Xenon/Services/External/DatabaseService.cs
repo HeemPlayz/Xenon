@@ -3,75 +3,37 @@
 using System;
 using System.Linq;
 using Raven.Client.Documents;
+using Raven.Client.Documents.Session;
 using Raven.Client.ServerWide;
 using Raven.Client.ServerWide.Operations;
+using Xenon.Core;
 
 #endregion
 
-namespace Xenon.Services.External
+namespace Xenon.Services
 {
     public class DatabaseService
     {
         private const string DatabaseName = "DiscordBot";
-        private readonly ConfigurationService _configurationService;
+        private readonly Configuration _configuration;
         private readonly Lazy<IDocumentStore> _store;
 
-        public DatabaseService(ConfigurationService configurationService)
+        public DatabaseService(Configuration configuration)
         {
             _store = new Lazy<IDocumentStore>(CreateStore);
-            _configurationService = configurationService;
+            _configuration = configuration;
             if (Store.Maintenance.Server.Send(new GetDatabaseNamesOperation(0, 5)).All(x => x != DatabaseName))
                 Store.Maintenance.Server.Send(new CreateDatabaseOperation(new DatabaseRecord(DatabaseName)));
+            Store.AggressivelyCacheFor(TimeSpan.FromDays(7));
         }
 
         private IDocumentStore Store => _store.Value;
 
-        public T GetObject<T>(object id) where T : class, new()
+        public void Execute(Action<IDocumentSession> action)
         {
             using (var session = Store.OpenSession())
             {
-                var obj = session.Load<T>($"{id}") ?? new T();
-                switch (obj)
-                {
-                    case Server server:
-                        server.ServerId = (ulong) id;
-                        obj = server as T;
-                        break;
-                    case User user:
-                        user.UserId = (ulong) id;
-                        obj = user as T;
-                        break;
-                }
-
-                return obj;
-            }
-        }
-
-        public void AddOrUpdateObject<T>(T entity, object id)
-        {
-            Store.AggressivelyCache();
-            using (var session = Store.OpenSession())
-            {
-                session.Store(entity, $"{id}");
-                session.SaveChanges();
-            }
-        }
-
-        public void RemoveObject<T>(object entity)
-        {
-            using (var session = Store.OpenSession())
-            {
-                session.Delete((T) entity);
-                session.SaveChanges();
-            }
-        }
-
-        public void RemoveObject(object id)
-        {
-            using (var session = Store.OpenSession())
-            {
-                session.Delete($"{id}");
-                session.SaveChanges();
+                action.Invoke(session);
             }
         }
 
@@ -79,7 +41,7 @@ namespace Xenon.Services.External
         {
             var store = new DocumentStore
             {
-                Urls = new[] {_configurationService.DatabaseConnectionString},
+                Urls = new[] {_configuration.DatabaseConnectionString},
                 Database = DatabaseName
             }.Initialize();
             return store;

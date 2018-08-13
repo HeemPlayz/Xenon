@@ -6,14 +6,13 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using DSharpPlus;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.CommandsNext.Exceptions;
-using DSharpPlus.Entities;
-using DSharpPlus.Interactivity;
-using DSharpPlus.Lavalink;
+using Discord;
+using Discord.Addons.Interactive;
+using Discord.Commands;
+using Discord.WebSocket;
+using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 using Xenon.Services;
 using Xenon.Services.External;
@@ -26,262 +25,161 @@ namespace Xenon.Core
     public class DiscordBot
     {
         private readonly int _shardCount = 1;
-        private DiscordClient _client;
-        private CommandsNextExtension _commandsNext;
-        private ConfigurationService _configurationService;
-        private HttpClient _httpClient;
-        private InteractivityExtension _interactivity;
-        private LavalinkExtension _lavalink;
-        private Random _random;
-        private IServiceProvider _serviceProvider;
+        private DiscordShardedClient _client;
+        private CommandService _commands;
+        private Configuration _configuration;
+        private DatabaseService _database;
+        private HttpClient _http;
+        private InteractiveService _interactive;
+        private IServiceProvider _services;
 
         public async Task InitializeAsync()
         {
-            _configurationService = ConfigurationService.LoadNewConfig();
-            _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("DiscordBot", "0.9"));
-            _random = new Random();
-            _client = new DiscordClient(new DiscordConfiguration
+            _configuration = ConfigurationService.LoadNewConfig();
+            _database = new DatabaseService(_configuration);
+            _http = new HttpClient();
+            _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("DiscordBot", "0.9"));
+            _client = new DiscordShardedClient(new DiscordSocketConfig
             {
-                AutomaticGuildSync = true,
-                AutoReconnect = true,
-                DateTimeFormat = "mm/dd/yyyy",
-                LogLevel = LogLevel.Debug,
+                AlwaysDownloadUsers = true,
+                DefaultRetryMode = RetryMode.AlwaysRetry,
+                LogLevel = LogSeverity.Info,
                 MessageCacheSize = 2048,
-                ReconnectIndefinitely = true,
-                TokenType = TokenType.Bot,
-                Token = _configurationService.BotToken,
-                UseInternalLogHandler = true,
-                ShardCount = _shardCount
+                TotalShards = _shardCount
             });
-            _interactivity =
-                _client.UseInteractivity(new InteractivityConfiguration
-                {
-                    PaginationBehavior = TimeoutBehaviour.DeleteMessage
-                });
-            _lavalink = _client.UseLavalink();
-            _serviceProvider = new ServiceCollection()
+            _commands = new CommandService(new CommandServiceConfig
+            {
+                CaseSensitiveCommands = false,
+                LogLevel = LogSeverity.Debug,
+                DefaultRunMode = RunMode.Async
+            });
+            _interactive = new InteractiveService(_client);
+            _services = new ServiceCollection()
                 .AddSingleton(_client)
-                .AddSingleton(_httpClient)
-                .AddSingleton(_interactivity)
-                .AddSingleton(_lavalink)
-                .AddSingleton(_random)
-                .AddSingleton(_configurationService)
-                .AddSingleton<DatabaseService>()
+                .AddSingleton(_commands)
+                .AddSingleton(_configuration)
+                .AddSingleton(_database)
+                .AddSingleton(_interactive)
+                .AddSingleton(_http)
+                .AddSingleton<Random>()
                 .AddSingleton<LogService>()
-                .AddSingleton<LevelingService>()
-                .AddSingleton<StatisticsUpdateServer>()
-                .AddSingleton<RedditService>()
+                .AddSingleton<CachingService>()
+                .AddSingleton<ServerService>()
                 .AddSingleton<NsfwService>()
                 .BuildServiceProvider();
-            _commandsNext = _client.UseCommandsNext(new CommandsNextConfiguration
-            {
-                CaseSensitive = false,
-                EnableDms = true,
-                StringPrefixes = _configurationService.BotPrefixes,
-                EnableMentionPrefix = true,
-                IgnoreExtraArguments = false,
-                Services = _serviceProvider,
-                EnableDefaultHelp = true,
-                PrefixResolver = ResolvePrefix,
-                DmHelp = true
-            });
+            _services.GetService<LogService>();
+            _client.MessageReceived += MessageReceived;
+            _client.ReactionAdded += ReactionAdded;
+            _client.Log += Log;
 
-            // Handling Errors
-            _commandsNext.CommandErrored += HandleErrorAsync;
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
-            // Registering Modules
-            _commandsNext.RegisterCommands(Assembly.GetEntryAssembly());
+            await _client.LoginAsync(TokenType.Bot, _configuration.BotToken);
+            await _client.StartAsync();
 
-            _commandsNext.SetHelpFormatter<HelpFormatter>();
-
-            // ModLog Events
-            _client.ChannelCreated += _serviceProvider.GetService<LogService>().ChannelCreated;
-            _client.ChannelDeleted += _serviceProvider.GetService<LogService>().ChannelDeleted;
-            _client.ChannelUpdated += _serviceProvider.GetService<LogService>().ChannelUpdated;
-            _client.GuildBanAdded += _serviceProvider.GetService<LogService>().GuildBanAdded;
-            _client.GuildBanRemoved += _serviceProvider.GetService<LogService>().GuildBanRemoved;
-            _client.GuildMemberRemoved += _serviceProvider.GetService<LogService>().GuildMemberRemoved;
-            _client.GuildMemberUpdated += _serviceProvider.GetService<LogService>().GuildMemberUpdated;
-            _client.GuildRoleCreated += _serviceProvider.GetService<LogService>().GuildRoleCreated;
-            _client.GuildRoleDeleted += _serviceProvider.GetService<LogService>().GuildRoleDeleted;
-            _client.GuildRoleUpdated += _serviceProvider.GetService<LogService>().GuildRoleUpdated;
-            _client.MessageDeleted += _serviceProvider.GetService<LogService>().MessageDeleted;
-            _client.MessageUpdated += _serviceProvider.GetService<LogService>().MessageUpdated;
-            _client.GuildCreated += _serviceProvider.GetService<StatisticsUpdateServer>().GuildUpdate;
-            _client.GuildDeleted += _serviceProvider.GetService<StatisticsUpdateServer>().GuildUpdate;
-            _client.Ready += _serviceProvider.GetService<StatisticsUpdateServer>().Ready;
-            _client.MessageCreated += _serviceProvider.GetService<LevelingService>().IncreaseUserXp;
-            _client.GuildMemberAdded += _serviceProvider.GetService<LogService>().GuildMemberAdded;
-            _client.GuildMemberRemoved += _serviceProvider.GetService<LogService>().GuildMemberLeft;
-
-            await _client.ConnectAsync();
-            await _client.InitializeAsync();
             await Task.Delay(-1);
         }
 
-        private Task<int> ResolvePrefix(DiscordMessage msg)
+        private Task Log(LogMessage message)
         {
-            var argPos = msg.GetMentionPrefixLength(_client.CurrentUser);
-            var prefixes = new List<string>(_configurationService.BotPrefixes);
-            if (msg.Channel is DiscordDmChannel)
-            {
-                prefixes.AddRange(_configurationService.BotPrefixes);
-            }
-            else
-            {
-                var server = _serviceProvider.GetService<DatabaseService>()
-                    .GetObject<Server>(msg.Channel.GuildId);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write(
+                $"[{DateTimeOffset.Now:dd.MM.yyyy HH:mm:ss}] [{message.Severity}] [{message.Source}]: ");
+            Console.ResetColor();
+            Console.WriteLine(message.Message ?? message.Exception.Message);
+            return Task.CompletedTask;
+        }
 
+        private async Task MessageReceived(SocketMessage msg)
+        {
+            if (msg.Author.IsBot || !(msg is SocketUserMessage message)) return;
+
+            var argPos = 0;
+
+            var prefixes = new List<string>(_configuration.BotPrefixes);
+
+            Server server = null;
+
+            ExecutionObject executionObj;
+
+            if (message.Channel is ITextChannel channel)
+            {
+                var guild = channel.Guild;
+                _database.Execute(x => { server = x.Load<Server>($"{guild.Id}"); });
                 switch (server.BlockingType)
                 {
-                    case ChannelBlockingType.Whitelist when !server.Whitelist.Contains(msg.ChannelId):
-                        return Task.FromResult(-1);
-                    case ChannelBlockingType.Blacklist when server.Blacklist.Contains(msg.ChannelId):
-                        return Task.FromResult(-1);
-                    case ChannelBlockingType.None:
+                    case BlockingType.Whitelist when !server.Whitelist.Contains(channel.Id):
+                    case BlockingType.Blacklist when server.Blacklist.Contains(channel.Id):
+                        return;
+                    case BlockingType.None:
                         break;
                 }
 
                 prefixes.AddRange(server.Prefixes);
 
-                for (var i = 0; argPos == -1 && i < prefixes.Count; i++)
-                    argPos = msg.GetStringPrefixLength(prefixes[i]);
+                executionObj = new ExecutionObject {Server = server};
             }
-
-            return Task.FromResult(argPos);
-        }
-
-        private async Task HandleErrorAsync(CommandErrorEventArgs args)
-        {
-            var ctx = args.Context;
-            Console.WriteLine(args.Exception);
-            DiscordEmbedBuilder embed = null;
-            switch (args.Exception)
+            else
             {
-                case ChecksFailedException checksFailedException:
-                    switch (checksFailedException.FailedChecks.First())
-                    {
-                        case CooldownAttribute cooldownAttribute:
-                            embed = new DiscordEmbedBuilder
-                            {
-                                Title = "Cooldown limit reached",
-                                Color = DiscordColor.Purple,
-                                Description =
-                                    $"You can use this command again in {Formatter.InlineCode($"{Math.Round(cooldownAttribute.GetRemainingCooldown(ctx).TotalSeconds, 2)} seconds")}"
-                            };
-                            break;
-                        case RequireBotPermissionsAttribute _:
-                            var botPermissionAttributes =
-                                checksFailedException.FailedChecks.OfType<RequireBotPermissionsAttribute>();
-                            embed = new DiscordEmbedBuilder
-                            {
-                                Title = "Missing Permissions",
-                                Color = DiscordColor.Purple,
-                                Description =
-                                    $"I need the {(botPermissionAttributes.Count() == 1 ? "permission" : "permissions")} {string.Join(", ", botPermissionAttributes.Select(x => Formatter.InlineCode($"{x.Permissions}")))} to do this"
-                            };
-                            break;
-                        case RequireNsfwAttribute _:
-                            embed = new DiscordEmbedBuilder
-                            {
-                                Title = "Missing Nsfw",
-                                Color = DiscordColor.Purple,
-                                Description = $"This channel has to be {Formatter.InlineCode("nsfw")} for me to do this"
-                            };
-                            break;
-                        case RequireOwnerAttribute _:
-                            embed = new DiscordEmbedBuilder
-                            {
-                                Title = "Missing Permissions",
-                                Color = DiscordColor.Purple,
-                                Description =
-                                    $"You need to be the {Formatter.InlineCode("owner")} of this server to do this"
-                            };
-                            break;
-                        case RequirePermissionsAttribute _:
-                            var permissionAttributes =
-                                checksFailedException.FailedChecks.OfType<RequirePermissionsAttribute>();
-                            embed = new DiscordEmbedBuilder
-                            {
-                                Title = "Missing Permissions",
-                                Color = DiscordColor.Purple,
-                                Description =
-                                    $"We both need the {(permissionAttributes.Count() == 1 ? "permission" : "permissions")} {string.Join(", ", permissionAttributes.Select(x => Formatter.InlineCode($"{x.Permissions}")))} to do this"
-                            };
-                            break;
-                        case RequirePrefixesAttribute requirePrefixesAttribute:
-                            embed = new DiscordEmbedBuilder
-                            {
-                                Title = "Missing Prefix",
-                                Color = DiscordColor.Purple,
-                                Description =
-                                    $"You need the to use {(requirePrefixesAttribute.Prefixes.Length == 1 ? "the prefix" : "one of the prefixes")} {string.Join(", ", requirePrefixesAttribute.Prefixes.Select(x => Formatter.InlineCode($"{x}")))}"
-                            };
-                            break;
-                        case RequireRolesAttribute requireRolesAttribute:
-                            embed = new DiscordEmbedBuilder
-                            {
-                                Title = "Missing Role",
-                                Color = DiscordColor.Purple,
-                                Description =
-                                    $"You need the to have the {Formatter.InlineCode(requireRolesAttribute.CheckMode.ToString().ToLower())} of the {(requireRolesAttribute.RoleNames.Count == 1 ? "role" : "roles")} {string.Join(", ", requireRolesAttribute.RoleNames.Select(x => Formatter.InlineCode($"{x}")))}"
-                            };
-                            break;
-                        case RequireUserPermissionsAttribute _:
-                            var userPermissionAttributes =
-                                checksFailedException.FailedChecks.OfType<RequirePermissionsAttribute>();
-                            embed = new DiscordEmbedBuilder
-                            {
-                                Title = "Missing Permissions",
-                                Color = DiscordColor.Purple,
-                                Description =
-                                    $"You need the {(userPermissionAttributes.Count() == 1 ? "permission" : "permissions")} {string.Join(", ", userPermissionAttributes.Select(x => Formatter.InlineCode($"{x.Permissions}")))} to do this"
-                            };
-                            break;
-                        case RequireGuildAttribute _:
-                            embed = new DiscordEmbedBuilder
-                            {
-                                Title = "Wrong Channel",
-                                Color = DiscordColor.Purple,
-                                Description =
-                                    $"This command is only aviable in {Formatter.InlineCode("server")} channels"
-                            };
-                            break;
-                    }
-
-                    break;
-                case HierachyException hierachyException:
-                    embed = new DiscordEmbedBuilder
-                    {
-                        Title = "Missing Permissions",
-                        Color = DiscordColor.Purple,
-                        Description = hierachyException.Message
-                    };
-                    break;
-                case ArgumentException argsException:
-                    break;
-                case CommandNotFoundException _:
-                    break;
-                default:
-                    Console.WriteLine(args.Exception);
-                    embed = new DiscordEmbedBuilder
-                    {
-                        Title = "Internal Error",
-                        Color = DiscordColor.Purple,
-                        Description = "I just occured an internal error"
-                    };
-                    break;
+                executionObj = new ExecutionObject();
             }
 
-            await ctx.RespondAsync(embed: embed);
+            if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) || prefixes.Any(x =>
+                    message.HasStringPrefix(x, ref argPos, StringComparison.OrdinalIgnoreCase)))
+            {
+                var context = new ShardedCommandContext(_client, message);
+                var parameters = message.Content.Substring(argPos).TrimStart('\n', ' ');
+                _services.GetService<CachingService>().ExecutionObjects[message.Id] = executionObj;
+                var result = await _commands.ExecuteAsync(context, parameters, _services, MultiMatchHandling.Best);
+                if (!result.IsSuccess) await HandleErrorAsync(result, context, parameters);
+            }
         }
 
-        private bool HasMentionPrefix(string message, ref int argPos, string prefix)
+        public async Task HandleErrorAsync(IResult result, ShardedCommandContext context, string parameters)
         {
-            if (!message.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return false;
-            argPos = prefix.Length;
-            return true;
+            var embed = UtilService.NormalizeEmbed(null, null, ColorType.Normal, _services.GetService<Random>());
+            switch (result.Error)
+            {
+                case CommandError.UnknownCommand:
+                    break;
+                case CommandError.ParseFailed:
+                case CommandError.BadArgCount:
+                case CommandError.ObjectNotFound:
+                    var searchResult = _commands.Search(context, parameters);
+                    embed.WithTitle(
+                            $"{searchResult.Commands.First().Command.Name.Humanize(LetterCasing.Title)} Command Usage")
+                        .WithDescription(searchResult.Commands.Select(x => x.Command).GetUsage(context));
+                    await context.Channel.SendMessageAsync(embed: embed.Build());
+                    break;
+                case CommandError.MultipleMatches:
+                    break;
+                case CommandError.UnmetPrecondition:
+                    embed.WithTitle("Unmet Precondition")
+                        .WithDescription(result.ErrorReason);
+                    await context.Channel.SendMessageAsync(embed: embed.Build());
+                    break;
+                case CommandError.Unsuccessful:
+                case CommandError.Exception:
+                case null:
+                    embed.WithTitle("Internal Error")
+                        .WithDescription("I just occured an internal error! :(");
+                    await context.Channel.SendMessageAsync(embed: embed.Build());
+                    break;
+            }
+        }
+
+        private async Task ReactionAdded(Cacheable<IUserMessage, ulong> arg1, ISocketMessageChannel channel,
+            SocketReaction reaction)
+        {
+            if (Equals(reaction.Emote.Name, "#⃣"))
+            {
+                var message = await arg1.GetOrDownloadAsync();
+                if (message.Author.IsBot) return;
+                if (Regex.IsMatch(message.Content, PublicVariables.CodeBlockRegex,
+                    RegexOptions.Multiline | RegexOptions.Compiled | RegexOptions.IgnoreCase))
+                    await message.Channel.SendMessageAsync(
+                        $"{message.Author.Mention} ❯ {message.Content.ToHastebin(_http)}");
+            }
         }
     }
 }
