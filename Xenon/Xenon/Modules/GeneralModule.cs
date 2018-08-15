@@ -305,7 +305,7 @@ namespace Xenon.Modules
             {
                 if (Server.Tags.TryGetValue(name, out var tag))
                 {
-                    CheckPermissions(tag);
+                    if (!CheckPermissions(tag)) return;
                     tag.AuthorId = Context.User.Id;
                     tag.Name = name;
                     tag.Message = message;
@@ -356,7 +356,7 @@ namespace Xenon.Modules
             {
                 if (Server.Tags.TryGetValue(tag, out var specificTag))
                 {
-                    CheckPermissions(specificTag);
+                    if (!CheckPermissions(specificTag)) return;
                     specificTag.AuthorId = Context.User.Id;
                     specificTag.Name = tag;
                 }
@@ -411,7 +411,7 @@ namespace Xenon.Modules
             {
                 if (Server.Tags.TryGetValue(name, out var tag))
                 {
-                    CheckPermissions(tag);
+                    if (!CheckPermissions(tag)) return;
                     tag.AuthorId = Context.User.Id;
                     tag.Name = name;
                     tag.Message = message;
@@ -461,7 +461,7 @@ namespace Xenon.Modules
             {
                 if (Server.Tags.TryGetValue(name, out var tag))
                 {
-                    CheckPermissions(tag);
+                    if (!CheckPermissions(tag)) return;
                     await ReplyEmbedAsync("Tag Updated",
                         $"Updated the name of the tag {tag.Name.InlineCode()} to {newname.InlineCode()}");
                     tag.AuthorId = Context.User.Id;

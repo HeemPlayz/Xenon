@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using Discord;
+using Discord.Rest;
 using Xenon.Services.External;
 
 #endregion
@@ -42,5 +43,7 @@ namespace Xenon.Services
         public static readonly Color DefaultColor = Color.DarkPurple;
 
         public static readonly Dictionary<string, string> Colors = UtilService.GetColors();
+
+        public static RestApplication Application;
     }
 }

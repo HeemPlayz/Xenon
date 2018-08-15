@@ -1,5 +1,7 @@
 ﻿#region
 
+using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 #endregion
@@ -31,5 +33,7 @@ namespace Xenon.Core
         [JsonProperty("LiscordApiKey")] public readonly string LiscordApiKey = "";
 
         [JsonProperty("LolApiKey")] public readonly string LolApiKey = "";
+
+        [JsonProperty("OwnerIds")] public readonly ulong[] OwnerIds = Array.Empty<ulong>();
     }
 }

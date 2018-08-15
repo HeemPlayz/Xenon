@@ -3,9 +3,11 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.DependencyInjection;
 using Xenon.Core;
 using Xenon.Services;
 
@@ -434,6 +436,7 @@ namespace Xenon.Modules
         {
             [Command("")]
             [Summary("Shows you the current color")]
+            [Priority(10)]
             public async Task ColorAsync()
             {
                 await ReplyEmbedAsync("Color",
@@ -461,6 +464,7 @@ namespace Xenon.Modules
             [Command("")]
             [Summary("Lets you set a custom color")]
             [CheckPermission(GuildPermission.ManageGuild)]
+            [Priority(2)]
             public async Task SetColorAsync(int r, int g, int b)
             {
                 if (new[] {r, g, b}.Any(x => x > 255 || x < 0))

@@ -75,6 +75,7 @@ namespace Xenon.Core
             _client.ReactionAdded += ReactionAdded;
             _client.Log += Log;
             _commands.Log += Log;
+            _client.ShardReady += Ready;
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
@@ -84,8 +85,15 @@ namespace Xenon.Core
             await Task.Delay(-1);
         }
 
+        private async Task Ready(DiscordSocketClient arg)
+        {
+            PublicVariables.Application = await _client.GetApplicationInfoAsync();
+        }
+
         private static Task Log(LogMessage message)
         {
+            if (message.Message.StartsWith("A") || message.Message.StartsWith("Unknown")) return Task.CompletedTask;
+            Task.Delay(1);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write(
                 $"[{DateTimeOffset.Now:dd.MM.yyyy HH:mm:ss}] [{message.Severity}] [{message.Source}]: ");
