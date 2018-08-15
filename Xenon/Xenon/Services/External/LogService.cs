@@ -295,7 +295,7 @@ namespace Xenon.Services
             var currentUser = await guild.GetCurrentUserAsync();
             if (!currentUser.GetPermissions(channel).SendMessages) return;
 
-            var embed = UtilService.NormalizeEmbed(title, description, ColorType.Normal, _random);
+            var embed = UtilService.NormalizeEmbed(title, description, ColorType.Normal, _random, server);
             embed.WithTimestamp(timeStamp.Value);
 
             await channel.SendMessageAsync(embed: embed.Build());

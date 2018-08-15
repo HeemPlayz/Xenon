@@ -37,25 +37,25 @@ namespace Xenon.Core
         protected override void AfterExecute(CommandInfo command)
         {
             var executionObj = Caching.ExecutionObjects[Context.Message.Id];
-            if (executionObj.Server != Server || true)
-                Database.Execute(x =>
-                {
-                    x.Store(Server);
-                    x.SaveChanges();
-                });
+            //if (executionObj.Server != Server)
+            Database.Execute(x =>
+            {
+                x.Store(Server);
+                x.SaveChanges();
+            });
             Caching.ExecutionObjects.Remove(Context.Message.Id);
         }
 
         public EmbedBuilder NormalizeEmbed(EmbedBuilder embed, ColorType colorType = ColorType.Normal,
             bool withRequested = false)
         {
-            return embed.NormalizeEmbed(colorType, Random, withRequested, Context);
+            return embed.NormalizeEmbed(colorType, Random, Server, withRequested, Context);
         }
 
         public EmbedBuilder NormalizeEmbed(string title, string description, ColorType colorType = ColorType.Normal,
             bool withRequested = false)
         {
-            return UtilService.NormalizeEmbed(title, description, colorType, Random, withRequested, Context);
+            return UtilService.NormalizeEmbed(title, description, colorType, Random, Server, withRequested, Context);
         }
 
         public async Task<IUserMessage> ReplyEmbedAsync(string title, string description,

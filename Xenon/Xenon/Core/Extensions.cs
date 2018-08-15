@@ -12,11 +12,11 @@ namespace Xenon.Core
     public enum CommandCategory
     {
         Moderation,
-        General,
+        [CannotDisable] General,
         Nsfw,
-        Settings,
+        [CannotDisable] Settings,
         Fun,
-        BotOwner
+        [CannotDisable] BotOwner
     }
 
     public class CommandCategoryAttribute : Attribute

@@ -24,14 +24,14 @@ namespace Xenon.Services.Nsfw
             _random = random;
         }
 
-        public async Task SendImageFromCategory(ShardedCommandContext context, string category)
+        public async Task SendImageFromCategory(ShardedCommandContext context, string category, Server server)
         {
             var link =
                 $"{JObject.Parse(await _httpClient.GetStringAsync($"https://nekobot.xyz/api/image?type={category}"))["message"]}";
 
             var embed = new EmbedBuilder()
                 .WithImageUrl(link);
-            embed.NormalizeEmbed(ColorType.Normal, _random, true, context);
+            embed.NormalizeEmbed(ColorType.Normal, _random, server, true, context);
 
             await context.Channel.SendMessageAsync(embed: embed.Build());
         }

@@ -15,6 +15,7 @@ namespace Xenon.Modules
 {
     [CheckNsfw]
     [CommandCategory(CommandCategory.Nsfw)]
+    [CheckState]
     public class NsfwModule : CommandBase
     {
         private readonly HttpClient _httpClient;
@@ -56,35 +57,35 @@ namespace Xenon.Modules
         [Summary("Sends a random hentai picture :D")]
         public async Task HentaiAsync()
         {
-            await _nsfwService.SendImageFromCategory(Context, "hentai");
+            await _nsfwService.SendImageFromCategory(Context, "hentai", Server);
         }
 
         [Command("nude")]
         [Summary("Sends some nice nudes :P")]
         public async Task NudeAsync()
         {
-            await _nsfwService.SendImageFromCategory(Context, "4k");
+            await _nsfwService.SendImageFromCategory(Context, "4k", Server);
         }
 
         [Command("nudegif")]
         [Summary("Sends a nice nude gif d:")]
         public async Task NudeGifAsync()
         {
-            await _nsfwService.SendImageFromCategory(Context, "pgif");
+            await _nsfwService.SendImageFromCategory(Context, "pgif", Server);
         }
 
         [Command("anal")]
         [Summary("Sends a carrot in a melon imao")]
         public async Task AnalAsync()
         {
-            await _nsfwService.SendImageFromCategory(Context, "anal");
+            await _nsfwService.SendImageFromCategory(Context, "anal", Server);
         }
 
         [Command("pussy")]
         [Summary("Sends a melon with a hole")]
         public async Task PussyAsync()
         {
-            await _nsfwService.SendImageFromCategory(Context, "pussy");
+            await _nsfwService.SendImageFromCategory(Context, "pussy", Server);
         }
     }
 }

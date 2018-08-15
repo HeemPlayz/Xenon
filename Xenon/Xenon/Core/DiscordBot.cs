@@ -12,6 +12,7 @@ using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
+using GiphyDotNet.Manager;
 using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 using Xenon.Services;
@@ -35,6 +36,7 @@ namespace Xenon.Core
 
         public async Task InitializeAsync()
         {
+            _ = PublicVariables.Colors;
             _configuration = ConfigurationService.LoadNewConfig();
             _database = new DatabaseService(_configuration);
             _http = new HttpClient();
@@ -50,8 +52,8 @@ namespace Xenon.Core
             _commands = new CommandService(new CommandServiceConfig
             {
                 CaseSensitiveCommands = false,
-                LogLevel = LogSeverity.Debug,
-                DefaultRunMode = RunMode.Async
+                LogLevel = LogSeverity.Info,
+                DefaultRunMode = RunMode.Sync
             });
             _interactive = new InteractiveService(_client);
             _services = new ServiceCollection()
@@ -61,6 +63,7 @@ namespace Xenon.Core
                 .AddSingleton(_database)
                 .AddSingleton(_interactive)
                 .AddSingleton(_http)
+                .AddSingleton(new Giphy(_configuration.GiphyApiKey))
                 .AddSingleton<Random>()
                 .AddSingleton<LogService>()
                 .AddSingleton<CachingService>()
@@ -71,6 +74,7 @@ namespace Xenon.Core
             _client.MessageReceived += MessageReceived;
             _client.ReactionAdded += ReactionAdded;
             _client.Log += Log;
+            _commands.Log += Log;
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
@@ -80,7 +84,7 @@ namespace Xenon.Core
             await Task.Delay(-1);
         }
 
-        private Task Log(LogMessage message)
+        private static Task Log(LogMessage message)
         {
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write(
@@ -92,52 +96,62 @@ namespace Xenon.Core
 
         private async Task MessageReceived(SocketMessage msg)
         {
-            if (msg.Author.IsBot || !(msg is SocketUserMessage message)) return;
-
-            var argPos = 0;
-
-            var prefixes = new List<string>(_configuration.BotPrefixes);
-
-            Server server = null;
-
-            ExecutionObject executionObj;
-
-            if (message.Channel is ITextChannel channel)
+            try
             {
-                var guild = channel.Guild;
-                _database.Execute(x => { server = x.Load<Server>($"{guild.Id}"); });
-                switch (server.BlockingType)
+                if (msg.Author.IsBot || !(msg is SocketUserMessage message)) return;
+
+                var argPos = 0;
+
+                var prefixes = new List<string>(_configuration.BotPrefixes);
+
+                Server server = null;
+
+                ExecutionObject executionObj;
+
+                if (message.Channel is ITextChannel channel)
                 {
-                    case BlockingType.Whitelist when !server.Whitelist.Contains(channel.Id):
-                    case BlockingType.Blacklist when server.Blacklist.Contains(channel.Id):
-                        return;
-                    case BlockingType.None:
-                        break;
+                    var guild = channel.Guild;
+                    _database.Execute(x => { server = x.Load<Server>($"{guild.Id}") ?? new Server(); });
+
+                    switch (server.BlockingType)
+                    {
+                        case BlockingType.Whitelist when !server.Whitelist.Contains(channel.Id):
+                        case BlockingType.Blacklist when server.Blacklist.Contains(channel.Id):
+                            return;
+                        case BlockingType.None:
+                            break;
+                    }
+
+                    prefixes.AddRange(server.Prefixes);
+
+                    executionObj = new ExecutionObject {Server = server};
+                }
+                else
+                {
+                    executionObj = new ExecutionObject();
                 }
 
-                prefixes.AddRange(server.Prefixes);
-
-                executionObj = new ExecutionObject {Server = server};
+                if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) || prefixes.Any(x =>
+                        message.HasStringPrefix(x, ref argPos, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var context = new ShardedCommandContext(_client, message);
+                    var parameters = message.Content.Substring(argPos).TrimStart('\n', ' ');
+                    _services.GetService<CachingService>().ExecutionObjects[message.Id] = executionObj;
+                    var result = await _commands.ExecuteAsync(context, parameters, _services, MultiMatchHandling.Best);
+                    if (!result.IsSuccess) await HandleErrorAsync(result, context, parameters, server);
+                }
             }
-            else
+            catch (Exception e)
             {
-                executionObj = new ExecutionObject();
-            }
-
-            if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) || prefixes.Any(x =>
-                    message.HasStringPrefix(x, ref argPos, StringComparison.OrdinalIgnoreCase)))
-            {
-                var context = new ShardedCommandContext(_client, message);
-                var parameters = message.Content.Substring(argPos).TrimStart('\n', ' ');
-                _services.GetService<CachingService>().ExecutionObjects[message.Id] = executionObj;
-                var result = await _commands.ExecuteAsync(context, parameters, _services, MultiMatchHandling.Best);
-                if (!result.IsSuccess) await HandleErrorAsync(result, context, parameters);
+                Console.WriteLine(e);
+                throw;
             }
         }
 
-        public async Task HandleErrorAsync(IResult result, ShardedCommandContext context, string parameters)
+        public async Task HandleErrorAsync(IResult result, ShardedCommandContext context, string parameters,
+            Server server)
         {
-            var embed = UtilService.NormalizeEmbed(null, null, ColorType.Normal, _services.GetService<Random>());
+            var embed = new EmbedBuilder().NormalizeEmbed(ColorType.Normal, _services.GetService<Random>(), server);
             switch (result.Error)
             {
                 case CommandError.UnknownCommand:
@@ -148,7 +162,9 @@ namespace Xenon.Core
                     var searchResult = _commands.Search(context, parameters);
                     embed.WithTitle(
                             $"{searchResult.Commands.First().Command.Name.Humanize(LetterCasing.Title)} Command Usage")
-                        .WithDescription(searchResult.Commands.Select(x => x.Command).GetUsage(context));
+                        .WithDescription(string.IsNullOrWhiteSpace(searchResult.Commands.First().Command.Module.Group)
+                            ? searchResult.Commands.Select(x => x.Command).GetUsage(context).InlineCode()
+                            : searchResult.Commands.First().Command.Module.GetUsage(context).InlineCode());
                     await context.Channel.SendMessageAsync(embed: embed.Build());
                     break;
                 case CommandError.MultipleMatches:

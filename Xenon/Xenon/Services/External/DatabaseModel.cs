@@ -52,7 +52,14 @@ namespace Xenon.Services
         public HashSet<ulong> Whitelist = new HashSet<ulong>();
         public string Name { get; set; }
         public string Id { get; private set; }
-        public Color? DefaultColor { get; set; } = PublicVariables.DefaultColor;
+        private uint? _defaultColor { get; set; }
+
+        [JsonIgnore]
+        public Color DefaultColor
+        {
+            get => _defaultColor.HasValue ? new Color(_defaultColor.Value) : PublicVariables.DefaultColor;
+            set => _defaultColor = value.RawValue;
+        }
 
         [JsonIgnore]
         public ulong ServerId

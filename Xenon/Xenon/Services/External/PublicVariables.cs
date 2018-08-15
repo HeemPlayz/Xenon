@@ -1,6 +1,8 @@
 ﻿#region
 
+using System.Collections.Generic;
 using Discord;
+using Xenon.Services.External;
 
 #endregion
 
@@ -38,5 +40,7 @@ namespace Xenon.Services
             @"(http|https)?(:)?(\/\/)?(discordapp|discord)..(gg|io|me|com)\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!-/]))?";
 
         public static readonly Color DefaultColor = Color.DarkPurple;
+
+        public static readonly Dictionary<string, string> Colors = UtilService.GetColors();
     }
 }

@@ -1,12 +1,15 @@
 ﻿#region
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
+using Microsoft.Extensions.DependencyInjection;
 using Xenon.Services;
+using Xenon.Services.External;
 
 #endregion
 
@@ -153,7 +156,7 @@ namespace Xenon.Core
                         return PreconditionResult.FromError("You are not the owner of this bot!");
                     return PreconditionResult.FromSuccess();
                 default:
-                    return PreconditionResult.FromError($"I just occured an internal error! :(");
+                    return PreconditionResult.FromError("I just occured an internal error! :(");
             }
         }
     }
@@ -203,5 +206,28 @@ namespace Xenon.Core
 
             throw new NotImplementedException(nameof(value));
         }
+    }
+
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+    public class CheckState : PreconditionAttribute
+    {
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command,
+            IServiceProvider services)
+        {
+            var caching = services.GetService<CachingService>();
+            if (caching.ExecutionObjects.TryGetValue(context.Message.Id, out var executionObj))
+            {
+                var category = command.Attributes.OfType<CommandCategoryAttribute>().FirstOrDefault()?.Category ??
+                               command.Module.Attributes.OfType<CommandCategoryAttribute>().FirstOrDefault()?.Category;
+                if (category.HasValue && executionObj.Server.DisabledCategories.Contains(category.Value))
+                    return Task.FromResult(PreconditionResult.FromError("This command category is disabled"));
+            }
+
+            return Task.FromResult(PreconditionResult.FromSuccess());
+        }
+    }
+
+    public class CannotDisableAttribute : Attribute
+    {
     }
 }

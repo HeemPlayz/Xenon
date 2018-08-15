@@ -16,6 +16,7 @@ namespace Xenon.Modules
 {
     [CommandCategory(CommandCategory.Moderation)]
     [CheckServer]
+    [CheckState]
     public class ModerationModule : CommandBase
     {
         private readonly LogService _logService;
@@ -76,7 +77,7 @@ namespace Xenon.Modules
         }
 
         [Command("clear")]
-        [Description("Clears a specific amount of messages from the current channel")]
+        [Description("Clears a specific amount of messages from this channel")]
         [CheckPermission(GuildPermission.ManageMessages)]
         [CheckPermission(ChannelPermission.ManageMessages)]
         [Summary("Clears some messages from the current chat")]
@@ -93,10 +94,9 @@ namespace Xenon.Modules
         }
 
         [Command("bulk")]
-        [Description("Deletes all messages from a channel")]
         [CheckPermission(ChannelPermission.ManageChannels)]
         [CheckBotPermission(ChannelPermission.ManageChannels)]
-        [Summary("Deletes all messages from the current channel")]
+        [Summary("Deletes all messages from this channel")]
         public async Task BulkAsync()
         {
             var oldChannel = (ITextChannel) Context.Channel;
@@ -125,6 +125,119 @@ namespace Xenon.Modules
             await _logService.SendLog(Context.Guild, "Bulk delete",
                 $"Responsible User ❯ {Context.User.Mention}\nChannel ❯ {channel.Mention}\nReason ❯ none",
                 server: Server);
+        }
+
+        [Group("reason")]
+        [CheckState]
+        [CommandCategory(CommandCategory.Moderation)]
+        [CheckServer]
+        [Summary("Lets you see or edit the reason of a log")]
+        public class ReasonModule : CommandBase
+        {
+            [Command("")]
+            [Summary("Edits the reason of a log item")]
+            public async Task ReasonAsync(ulong id, [Remainder] string reason)
+            {
+                if (Server.ModLog.TryGetValue(id, out var logItem))
+                {
+                    if (logItem.ResponsibleUserId == Context.User.Id)
+                    {
+                        logItem.Reason = reason;
+                        Server.ModLog[logItem.LogId] = logItem;
+                        await ReplyEmbedAsync("Reason Updated",
+                            $"Updated the reason for {$"{logItem.LogId}".InlineCode()} to {$"{reason}".InlineCode()}");
+                    }
+                    else
+                    {
+                        await ReplyEmbedAsync("Missing Permissions", "This log item doesn\'t belong to you");
+                    }
+                }
+                else
+                {
+                    await ReplyEmbedAsync("Not Found", $"Couldn't find a log item with the id {$"{id}".InlineCode()}");
+                }
+            }
+
+            [Command("")]
+            [Summary("Shows the reason of a log item")]
+            public async Task ReasonAsync(ulong id)
+            {
+                if (Server.ModLog.TryGetValue(id, out var logItem))
+                    await ReplyEmbedAsync("Reason",
+                        $"The reason of {$"{logItem.LogId}".InlineCode()} is {$"{logItem.Reason ?? "not set"}".InlineCode()}");
+                else
+                    await ReplyEmbedAsync("Not Found", $"Couldn't find a log item with the id {$"{id}".InlineCode()}");
+            }
+        }
+
+        [Group("log")]
+        [CommandCategory(CommandCategory.Moderation)]
+        [CheckState]
+        [CheckServer]
+        [Summary("Shows the last 10 log items")]
+        public class LogModule : CommandBase
+        {
+            [Command("")]
+            [Summary("Shows all log items")]
+            public async Task LogAsync()
+            {
+                var logItems = Server.ModLog.Take(10);
+                if (!logItems.Any())
+                {
+                    await ReplyEmbedAsync("Log Empty", "There are no log entrys on this server yet");
+                    return;
+                }
+
+                await ReplyEmbedAsync($"{Context.Guild.Name} Log",
+                    string.Join("\n",
+                        logItems.Select(x =>
+                            $"❯ {$"{x.Value.ActionType}".ToLower().InlineCode()} {Context.Guild.GetUser(x.Value.ResponsibleUserId)?.Mention ?? "invalid-user"} ⇒ {Context.Guild.GetUser(x.Value.UserId)?.Mention ?? "invalid-user"} ❯ {x.Value.Reason ?? "no reason"}")));
+            }
+
+            [Command("")]
+            [Summary("Shows all log items with a specific type")]
+            public async Task LogAsync([Remainder] string category)
+            {
+                if (Enum.TryParse(typeof(ActionType), category, true, out var specificObject))
+                {
+                    var specificCategory = (ActionType) specificObject;
+                    var logItems = Server.ModLog.Where(x => x.Value.ActionType == specificCategory).Take(10);
+                    if (!logItems.Any())
+                    {
+                        await ReplyEmbedAsync("Log Empty",
+                            $"There are no log entrys with the category {$"{specificCategory}".ToLower().InlineCode()} yet");
+                        return;
+                    }
+
+                    await ReplyEmbedAsync($"{Context.Guild.Name} Log",
+                        string.Join("\n",
+                            logItems.Select(x =>
+                                $"❯ {$"{x.Value.ActionType}".ToLower().InlineCode()} {Context.Guild.GetUser(x.Value.ResponsibleUserId)?.Mention ?? "invalid-user"} ⇒ {Context.Guild.GetUser(x.Value.UserId)?.Mention ?? "invalid-user"} ❯ {x.Value.Reason ?? "no reason"}")));
+                }
+                else
+                {
+                    await ReplyEmbedAsync("Category Not Found",
+                        $"Aviable categorys: {string.Join(", ", Enum.GetValues(typeof(ActionType)).Cast<ActionType>().Select(x => $"{x}".ToLower().InlineCode()))}");
+                }
+            }
+
+            [Command("")]
+            [Summary("Shows all log items with a specific user")]
+            public async Task LogAsync(IUser user)
+            {
+                var logItems = Server.ModLog
+                    .Where(x => x.Value.ResponsibleUserId == user.Id || x.Value.UserId == user.Id).Take(10);
+                if (!logItems.Any())
+                {
+                    await ReplyEmbedAsync("Log Empty", "There are no log entrys from this user yet");
+                    return;
+                }
+
+                await ReplyEmbedAsync($"{Context.Guild.Name} Log",
+                    string.Join("\n",
+                        logItems.Select(x =>
+                            $"❯ {$"{x.Value.ActionType}".ToLower().InlineCode()} {Context.Guild.GetUser(x.Value.ResponsibleUserId)?.Mention ?? "invalid-user"} ⇒ {Context.Guild.GetUser(x.Value.UserId)?.Mention ?? "invalid-user"} ❯ {x.Value.Reason ?? "no reason"}")));
+            }
         }
     }
 }

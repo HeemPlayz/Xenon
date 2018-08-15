@@ -2,11 +2,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.Commands;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xenon.Core;
 
@@ -86,14 +88,14 @@ namespace Xenon.Services.External
         }
 
         public static EmbedBuilder NormalizeEmbed(this EmbedBuilder embed,
-            ColorType colorType, Random random, bool withRequested = false, ShardedCommandContext context = null)
+            ColorType colorType, Random random, Server server, bool withRequested = false,
+            ShardedCommandContext context = null)
         {
             if (withRequested && context != null)
                 embed.WithFooter(
                     $"Requested by {(context.User as IGuildUser)?.Nickname ?? context.User.Username}#{context.User.Discriminator}",
                     context.User.GetAvatarUrl() ?? context.User.GetDefaultAvatarUrl());
-            embed.SetColor(colorType, random)
-                .WithColor(PublicVariables.DefaultColor);
+            embed.SetColor(colorType, server, random);
             if (withRequested)
                 embed.WithFooter(
                     $"Requested by {(context.User as IGuildUser)?.Nickname ?? context.User.Username}#{context.User.Discriminator}",
@@ -102,14 +104,15 @@ namespace Xenon.Services.External
         }
 
         public static EmbedBuilder NormalizeEmbed(string title, string description, ColorType colorType, Random random,
-            bool withRequested = false, ShardedCommandContext context = null)
+            Server server, bool withRequested = false,
+            ShardedCommandContext context = null)
         {
             var embed = new EmbedBuilder();
             if (withRequested && context != null)
                 embed.WithFooter(
                     $"Requested by {(context.User as IGuildUser)?.Nickname ?? context.User.Username}#{context.User.Discriminator}",
                     context.User.GetAvatarUrl() ?? context.User.GetDefaultAvatarUrl());
-            embed.SetColor(colorType, random)
+            embed.SetColor(colorType, server, random)
                 .WithTitle(title)
                 .WithDescription(description);
             if (withRequested)
@@ -119,20 +122,30 @@ namespace Xenon.Services.External
             return embed;
         }
 
-        private static EmbedBuilder SetColor(this EmbedBuilder embed, ColorType colorType, Random random = null)
+        private static EmbedBuilder SetColor(this EmbedBuilder embed, ColorType colorType, Server server,
+            Random random)
         {
-            random = random ?? new Random();
-            switch (colorType)
+            try
             {
-                case ColorType.Random:
-                    embed.WithColor(new Color(random.Next(255), random.Next(255), random.Next(255)));
-                    break;
-                case ColorType.Normal:
-                    embed.WithColor(PublicVariables.DefaultColor);
-                    break;
-            }
+                random = random ?? new Random();
+                embed = embed ?? new EmbedBuilder();
+                switch (colorType)
+                {
+                    case ColorType.Random:
+                        embed.WithColor(new Color(random.Next(255), random.Next(255), random.Next(255)));
+                        break;
+                    case ColorType.Normal:
+                        embed.WithColor(server.DefaultColor);
+                        break;
+                }
 
-            return embed;
+                return embed;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         public static bool GetSetting(this Server server, ServerSettings settings)
@@ -162,6 +175,42 @@ namespace Xenon.Services.External
                 message = message.Replace(pair.Key, pair.Value, StringComparison.OrdinalIgnoreCase);
 
             return message;
+        }
+
+        public static Dictionary<string, string> GetColors()
+        {
+            const string filePath = "colors.json";
+            if (!File.Exists(filePath)) File.Create(filePath).Close();
+
+            var dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(filePath));
+            dictionary = new Dictionary<string, string>(dictionary, StringComparer.OrdinalIgnoreCase);
+            return dictionary;
+        }
+
+        public static int CalculateDifference(this string first, string second)
+        {
+            var n = first.Length;
+            var m = second.Length;
+            var d = new int[n + 1, m + 1];
+
+            if (n == 0) return m;
+
+            if (m == 0) return n;
+
+            for (var i = 0; i <= n; d[i, 0] = i++) ;
+            for (var j = 0; j <= m; d[0, j] = j++) ;
+
+            for (var i = 1; i <= n; i++)
+            for (var j = 1; j <= m; j++)
+            {
+                var cost = second[j - 1] == first[i - 1] ? 0 : 1;
+
+                d[i, j] = Math.Min(
+                    Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                    d[i - 1, j - 1] + cost);
+            }
+
+            return d[n, m];
         }
     }
 }
