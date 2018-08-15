@@ -43,6 +43,16 @@ namespace Xenon.Services
             _client.UserJoined += UserJoined;
             _client.UserLeft += UserLeft;
             _client.UserUnbanned += UserUnbanned;
+            _client.UserJoined += Autorole;
+        }
+
+        private async Task Autorole(SocketGuildUser user)
+        {
+            Server server = null;
+            _database.Execute(x => { server = x.Load<Server>($"{user.Guild.Id}"); });
+            var role = user.Guild.GetRole(server.AutoroleId.GetValueOrDefault());
+            if (role == null) return;
+            await user.AddRoleAsync(role);
         }
 
         private async Task UserUnbanned(SocketUser arg1, SocketGuild guild)

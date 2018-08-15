@@ -480,5 +480,91 @@ namespace Xenon.Modules
                     $"Set the custom color to RGB({$"{r}".InlineCode()}, {$"{g}".InlineCode()}, {$"{b}".InlineCode()})");
             }
         }
+        
+        [Group("logchannel")]
+        [Alias("lc")]
+        [CommandCategory(CommandCategory.Settings)]
+        [CheckServer]
+        [Summary("Lets you set the logchannel")]
+        public class LogChannelModule : CommandBase
+        {
+            [Command("")]
+            public async Task LogChannelAsync()
+            {
+                var channel = Context.Guild.GetTextChannel(Server.LogChannelId.GetValueOrDefault());
+                await ReplyEmbedAsync("Logchannel", $"The logchannel is {(channel == null ? "not set" : $"{channel.Mention}")}");
+            }
+
+            [Command("")]
+            [CheckPermission(GuildPermission.ManageGuild)]
+            public async Task LogChannelAsync(ITextChannel channel)
+            {
+                Server.LogChannelId = channel.Id;
+                await ReplyEmbedAsync("Logchannel Set", $"Set the logchannel to {channel.Mention}");
+            }
+        }
+        
+        [Group("announcechannel")]
+        [Alias("ac")]
+        [CommandCategory(CommandCategory.Settings)]
+        [CheckServer]
+        [Summary("Lets you set the announcechannel")]
+        public class AnnounceChannelModule : CommandBase
+        {
+            [Command("")]
+            public async Task AnnouceChannelAsync()
+            {
+                var channel = Context.Guild.GetTextChannel(Server.AnnounceChannelId.GetValueOrDefault());
+                await ReplyEmbedAsync("Announcechannel", $"The announcechannel is {(channel == null ? "not set" : $"{channel.Mention}")}");
+            }
+
+            [Command("")]
+            [CheckPermission(GuildPermission.ManageGuild)]
+            public async Task AnnounceChannelAsync(ITextChannel channel)
+            {
+                Server.AnnounceChannelId = channel.Id;
+                await ReplyEmbedAsync("Announcechannel Set", $"Set the announcechannel to {channel.Mention}");
+            }
+        }
+        
+        [Group("autorole")]
+        [Alias("ar")]
+        [CommandCategory(CommandCategory.Settings)]
+        [CheckServer]
+        [Summary("Lets you set the autorole (every joining user gets this role")]
+        public class AutoRoleModule : CommandBase
+        {
+            [Command("")]
+            public async Task AutoRoleAsync()
+            {
+                var role = Context.Guild.GetRole(Server.AutoroleId.GetValueOrDefault());
+                await ReplyEmbedAsync("Autorole", $"The autorole is {(role == null ? "not set" : $"{role.Mention}")}");
+            }
+
+            [Command("")]
+            [CheckPermission(GuildPermission.ManageGuild)]
+            public async Task AutoRoleAsync(string role)
+            {
+                var specificRole = Context.Guild.Roles.FirstOrDefault(x =>
+                    string.Equals(x.Name, role, StringComparison.OrdinalIgnoreCase));
+                if (specificRole == null)
+                {
+                    await ReplyEmbedAsync("Role Not Found", $"Couldn't find a role with the name {role.InlineCode()}");
+                }
+                else
+                {
+                    if (specificRole.Position >= Context.Guild.CurrentUser.Hierarchy)
+                    {
+                        await ReplyEmbedAsync("Missing Permissions",
+                            $"I have not enough permissions to assign this role");
+                    }
+                    else
+                    {
+                        Server.AutoroleId = specificRole.Id;
+                        await ReplyEmbedAsync("Autorole Set", $"Set the autorole to {specificRole.Mention}");                        
+                    }
+                }
+            }
+        }
     }
 }

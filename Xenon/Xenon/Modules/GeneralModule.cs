@@ -176,6 +176,7 @@ namespace Xenon.Modules
                                 embeds.Add(embd);
                             }
 
+                            embeds = MoreEnumerable.ToHashSet(embeds).ToList();
                             await PagedReplyAsync(embeds);
                         }
 
@@ -262,7 +263,10 @@ namespace Xenon.Modules
                 if (embeds.Count == 1)
                     await ReplyAsync(embed: embeds.First().Build());
                 else
+                {
+                    embeds = MoreEnumerable.ToHashSet(embeds).ToList();
                     await PagedReplyAsync(embeds);
+                }
             }
         }
 

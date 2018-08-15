@@ -93,7 +93,6 @@ namespace Xenon.Core
         private static Task Log(LogMessage message)
         {
             if (message.Message.StartsWith("A") || message.Message.StartsWith("Unknown")) return Task.CompletedTask;
-            Task.Delay(1);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write(
                 $"[{DateTimeOffset.Now:dd.MM.yyyy HH:mm:ss}] [{message.Severity}] [{message.Source}]: ");
