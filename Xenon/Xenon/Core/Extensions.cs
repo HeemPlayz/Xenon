@@ -16,7 +16,8 @@ namespace Xenon.Core
         Nsfw,
         [CannotDisable] Settings,
         Fun,
-        [CannotDisable] BotOwner
+        [CannotDisable] BotOwner,
+        Tools
     }
 
     public class CommandCategoryAttribute : Attribute
@@ -43,7 +44,8 @@ namespace Xenon.Core
     public enum ServerSettings
     {
         LeaveMessage,
-        JoinMessage
+        JoinMessage,
+        Hastebin
     }
 
     public class EvaluateObject

@@ -78,6 +78,7 @@ namespace Xenon.Core
             _client.ShardReady += Ready;
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            Console.WriteLine($"{_commands.Commands.Count()} commands | {_commands.Modules.Count()} modules");
 
             await _client.LoginAsync(TokenType.Bot, _configuration.BotToken);
             await _client.StartAsync();
@@ -191,11 +192,15 @@ namespace Xenon.Core
             }
         }
 
-        private async Task ReactionAdded(Cacheable<IUserMessage, ulong> arg1, ISocketMessageChannel channel,
+        private async Task ReactionAdded(Cacheable<IUserMessage, ulong> arg1, ISocketMessageChannel arg2,
             SocketReaction reaction)
         {
+            if (!(arg2 is ITextChannel channel)) return;
+            Server server = null;
             if (Equals(reaction.Emote.Name, "#⃣"))
             {
+                _database.Execute(x => server = x.Load<Server>($"{channel.Guild.Id}"));
+                if (!server.GetSetting(ServerSettings.Hastebin)) return;
                 var message = await arg1.GetOrDownloadAsync();
                 if (message.Author.IsBot) return;
                 if (Regex.IsMatch(message.Content, PublicVariables.CodeBlockRegex,
