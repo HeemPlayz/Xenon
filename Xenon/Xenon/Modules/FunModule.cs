@@ -149,6 +149,7 @@ namespace Xenon.Modules
         [Alias("giphy", "g")]
         [CommandCategory(CommandCategory.Fun)]
         [Summary("Sends a random gif or one with your tag")]
+        [CheckNsfw]
         public class GiphyModule : CommandBase
         {
             private readonly Giphy _giphy;
