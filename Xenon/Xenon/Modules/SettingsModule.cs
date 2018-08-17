@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -457,7 +458,7 @@ namespace Xenon.Modules
                 else
                 {
                     await ReplyEmbedAsync("Color Not Found",
-                        $"Aviable colors: {string.Join(", ", PublicVariables.Colors.Select(x => $"{x}".InlineCode()))}");
+                        $"Aviable colors: {string.Join(", ", PublicVariables.Colors.Select(x => $"{x.Key}".InlineCode()))}");
                 }
             }
 
@@ -563,6 +564,73 @@ namespace Xenon.Modules
                         Server.AutoroleId = specificRole.Id;
                         await ReplyEmbedAsync("Autorole Set", $"Set the autorole to {specificRole.Mention}");                        
                     }
+                }
+            }
+        }
+        
+        [Group("settings")]
+        [Alias("s")]
+        [CommandCategory(CommandCategory.Settings)]
+        [CheckServer]
+        [Summary("Lets you edit the settings")]
+        public class ServerSettingsModule : CommandBase
+        {
+            [Command("")]
+            public async Task SettingsAsync()
+            {
+                var settings = Enum.GetValues(typeof(ServerSettings)).Cast<ServerSettings>();
+                await ReplyEmbedAsync("Settings", $"Enabled: {string.Join(", ",  settings.Except(Server.DisabledSettings).Select(x => $"{x}".ToLower().InlineCode()))}\nDisabled: {string.Join(", ", Server.DisabledSettings.Select(x => $"{x}".ToLower().InlineCode()))}");
+            }
+
+            [Command("enable")]
+            [Alias("e")]
+            [CheckPermission(GuildPermission.ManageGuild)]
+            public async Task EnableSettingAsync([Remainder] string setting)
+            {
+                if (Enum.TryParse(typeof(ServerSettings), setting, true, out var specificObject))
+                {
+                    var specificSetting = (ServerSettings) specificObject;
+                    if (Server.DisabledSettings.Remove(specificSetting))
+                    {
+                        await ReplyEmbedAsync("Setting Enabled",
+                            $"Enabled the setting {$"{specificSetting}".ToLower().InlineCode()}");
+                    }
+                    else
+                    {
+                        await ReplyEmbedAsync("Already Enabled",
+                            $"The setting {$"{specificSetting}".ToLower().InlineCode()} is already enabled");
+                    }
+                }
+                else
+                {
+                    await ReplyEmbedAsync("Setting Not Found",
+                        $"Aviable settings: {string.Join(", ", Enum.GetValues(typeof(ServerSettings)).Cast<ServerSettings>().Select(x => $"{x}".ToLower().InlineCode()))}");
+                }
+            }
+            
+            [Command("disable")]
+            [Alias("d")]
+            [CheckPermission(GuildPermission.ManageGuild)]
+            public async Task DisableSettingAsync([Remainder] string setting)
+            {
+                if (Enum.TryParse(typeof(ServerSettings), setting, true, out var specificObject))
+                {
+                    var specificSetting = (ServerSettings) specificObject;
+                    if (Server.DisabledSettings.Add(specificSetting))
+                    {
+                        await ReplyEmbedAsync("Setting Disabled",
+                            $"Disabled the setting {$"{specificSetting}".ToLower().InlineCode()}");
+                    }
+                    else
+                    {
+                        await ReplyEmbedAsync("Already Disabled",
+                            $"The setting {$"{specificSetting}".ToLower().InlineCode()} is already disabled");
+                    }
+                }
+                else
+                {
+                    await ReplyEmbedAsync("Setting Not Found",
+                        $"Aviable settings: {string.Join(", ", Enum.GetValues(typeof(ServerSettings)).Cast<ServerSettings>().Select(x => $"{x}".ToLower().InlineCode()))}");
                 }
             }
         }

@@ -164,8 +164,9 @@ namespace Xenon.Core
             {
                 case CommandError.UnknownCommand:
                     break;
-                case CommandError.ParseFailed:
                 case CommandError.BadArgCount:
+                    break;
+                case CommandError.ParseFailed:
                 case CommandError.ObjectNotFound:
                     var searchResult = _commands.Search(context, parameters);
                     embed.WithTitle(

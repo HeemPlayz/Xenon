@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
+using Sparrow.Platform.Posix;
 using Xenon.Core;
 using Xenon.Services;
 using ActionType = Xenon.Services.ActionType;
@@ -77,11 +79,10 @@ namespace Xenon.Modules
         }
 
         [Command("clear")]
-        [Description("Clears a specific amount of messages from this channel")]
         [CheckPermission(GuildPermission.ManageMessages)]
         [CheckPermission(ChannelPermission.ManageMessages)]
         [Summary("Clears some messages from the current chat")]
-        public async Task ClearAsync(int count, string reason = null)
+        public async Task ClearAsync(int count, [Remainder] string reason = null)
         {
             var messages = await Context.Channel.GetMessagesAsync(count + 1).FlattenAsync();
             messages = messages.Where(x => x.Timestamp >= DateTimeOffset.Now - TimeSpan.FromDays(14));
@@ -91,6 +92,36 @@ namespace Xenon.Modules
             await _logService.SendLog(Context.Guild, "Chat cleared",
                 $"Responsible User ❯ {Context.User.Mention}\nMessages ❯ {messages.Count() - 1}\nReason ❯ none",
                 server: Server);
+        }
+
+        [Command("mute")]
+        [CheckPermission(ChannelPermission.MuteMembers)]
+        [CheckBotPermission(GuildPermission.ManageRoles)]
+        [Summary("Mutes a user for a given reason")]
+        public async Task MuteAsync([CheckUserHierarchy] [CheckBotHierarchy] SocketGuildUser user, [Remainder] string reason = null)
+        {
+            var roleName = $"{Context.Client.CurrentUser.Username}-Muted";
+            var role = Context.Guild.Roles.All(x => x.Name != roleName)
+                ? Context.Guild.GetRole(
+                    (await Context.Guild.CreateRoleAsync(roleName, new GuildPermissions(sendMessages: false, addReactions: false, speak: false))).Id)
+                : Context.Guild.Roles.FirstOrDefault(x => x.Name == roleName);
+
+            if (user.Roles.Contains(role))
+            {
+                await ReplyEmbedAsync("Already Muted", $"{user.Mention} is already muted");
+                return;
+            }
+            
+            var overwritePermissions = new OverwritePermissions(sendMessages: PermValue.Deny, addReactions: PermValue.Deny, speak: PermValue.Deny);
+            var overwrite = new Overwrite(role.Id, PermissionTarget.Role, overwritePermissions);
+
+            foreach (var channel in Context.Guild.Channels)
+            {
+                if (!channel.PermissionOverwrites.Contains(overwrite))
+                {
+                    await channel.AddPermissionOverwriteAsync(role, overwritePermissions);
+                }
+            }
         }
 
         [Command("bulk")]

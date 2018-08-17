@@ -44,7 +44,6 @@ namespace Xenon.Modules
             } while (url.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) ||
                      url.EndsWith(".webm", StringComparison.OrdinalIgnoreCase));
 
-            Console.WriteLine(url);
             var embed = new EmbedBuilder()
                 .WithImageUrl(url);
             await ReplyEmbedAsync(embed);
@@ -149,7 +148,6 @@ namespace Xenon.Modules
         [Alias("giphy", "g")]
         [CommandCategory(CommandCategory.Fun)]
         [Summary("Sends a random gif or one with your tag")]
-        [CheckNsfw]
         public class GiphyModule : CommandBase
         {
             private readonly Giphy _giphy;

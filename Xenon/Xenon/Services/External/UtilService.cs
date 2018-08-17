@@ -150,16 +150,17 @@ namespace Xenon.Services.External
 
         public static bool GetSetting(this Server server, ServerSettings settings)
         {
-            return !server.Settings.TryGetValue(settings, out var state) || state;
+            return !server.DisabledSettings.Contains(settings);
         }
 
         public static bool GetChannelSettings(this Server server, ulong channelId, ServerSettings settings)
         {
-            server.ChannelSettings.TryGetValue(channelId, out var channelSettings);
-            var serverState = server.GetSetting(settings);
-            if (channelSettings != null && channelSettings.TryGetValue(settings, out var state)) return state;
+            if (server.DisabledChannelSettings.TryGetValue(channelId, out var disabled))
+            {
+                return !disabled.Contains(settings);
+            }
 
-            return serverState;
+            return server.GetSetting(settings);
         }
 
         public static string ToMessage(this string message, IUser user, IGuild guild)
