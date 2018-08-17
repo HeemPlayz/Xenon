@@ -41,7 +41,7 @@ namespace Xenon.Core
         Normal
     }
 
-    public enum ServerSettings
+    public enum Setting
     {
         LeaveMessage,
         JoinMessage,

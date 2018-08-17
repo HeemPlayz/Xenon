@@ -148,19 +148,19 @@ namespace Xenon.Services.External
             }
         }
 
-        public static bool GetSetting(this Server server, ServerSettings settings)
+        public static bool GetSetting(this Server server, Setting setting)
         {
-            return !server.DisabledSettings.Contains(settings);
+            return !server.DisabledSettings.Contains(setting);
         }
 
-        public static bool GetChannelSettings(this Server server, ulong channelId, ServerSettings settings)
+        public static bool GetChannelSettings(this Server server, ulong channelId, Setting setting)
         {
             if (server.DisabledChannelSettings.TryGetValue(channelId, out var disabled))
             {
-                return !disabled.Contains(settings);
+                return !disabled.Contains(setting);
             }
 
-            return server.GetSetting(settings);
+            return server.GetSetting(setting);
         }
 
         public static string ToMessage(this string message, IUser user, IGuild guild)

@@ -70,7 +70,7 @@ namespace Xenon.Services
         {
             Server server = null;
             _database.Execute(x => { server = x.Load<Server>($"{user.Guild.Id}"); });
-            if (!server.GetSetting(ServerSettings.LeaveMessage)) return;
+            if (!server.GetSetting(Setting.LeaveMessage)) return;
 
             if (!server.AnnounceChannelId.HasValue) return;
             var channel = user.Guild.GetTextChannel(server.AnnounceChannelId.Value);
@@ -87,7 +87,7 @@ namespace Xenon.Services
         {
             Server server = null;
             _database.Execute(x => { server = x.Load<Server>($"{user.Guild.Id}"); });
-            if (!server.GetSetting(ServerSettings.JoinMessage)) return;
+            if (!server.GetSetting(Setting.JoinMessage)) return;
 
             if (!server.AnnounceChannelId.HasValue) return;
             var channel = user.Guild.GetTextChannel(server.AnnounceChannelId.Value);

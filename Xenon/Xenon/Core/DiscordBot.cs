@@ -201,7 +201,7 @@ namespace Xenon.Core
             if (Equals(reaction.Emote.Name, "#⃣"))
             {
                 _database.Execute(x => server = x.Load<Server>($"{channel.Guild.Id}"));
-                if (!server.GetSetting(ServerSettings.Hastebin)) return;
+                if (!server.GetSetting(Setting.Hastebin)) return;
                 var message = await arg1.GetOrDownloadAsync();
                 if (message.Author.IsBot) return;
                 if (Regex.IsMatch(message.Content, PublicVariables.CodeBlockRegex,

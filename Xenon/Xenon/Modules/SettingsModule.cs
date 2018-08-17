@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Xenon.Core;
 using Xenon.Services;
@@ -559,6 +560,11 @@ namespace Xenon.Modules
                         await ReplyEmbedAsync("Missing Permissions",
                             $"I have not enough permissions to assign this role");
                     }
+                    else if (specificRole.Position >= (Context.User as SocketGuildUser).Hierarchy)
+                    {
+                        await ReplyEmbedAsync("Missing Permissions",
+                            $"You have not enough permissions to assign this role");
+                    }
                     else
                     {
                         Server.AutoroleId = specificRole.Id;
@@ -569,7 +575,7 @@ namespace Xenon.Modules
         }
         
         [Group("settings")]
-        [Alias("s")]
+        [Alias("setting", "s")]
         [CommandCategory(CommandCategory.Settings)]
         [CheckServer]
         [Summary("Lets you edit the settings")]
@@ -578,7 +584,7 @@ namespace Xenon.Modules
             [Command("")]
             public async Task SettingsAsync()
             {
-                var settings = Enum.GetValues(typeof(ServerSettings)).Cast<ServerSettings>();
+                var settings = Enum.GetValues(typeof(Setting)).Cast<Setting>();
                 await ReplyEmbedAsync("Settings", $"Enabled: {string.Join(", ",  settings.Except(Server.DisabledSettings).Select(x => $"{x}".ToLower().InlineCode()))}\nDisabled: {string.Join(", ", Server.DisabledSettings.Select(x => $"{x}".ToLower().InlineCode()))}");
             }
 
@@ -587,9 +593,9 @@ namespace Xenon.Modules
             [CheckPermission(GuildPermission.ManageGuild)]
             public async Task EnableSettingAsync([Remainder] string setting)
             {
-                if (Enum.TryParse(typeof(ServerSettings), setting, true, out var specificObject))
+                if (Enum.TryParse(typeof(Setting), setting, true, out var specificObject))
                 {
-                    var specificSetting = (ServerSettings) specificObject;
+                    var specificSetting = (Setting) specificObject;
                     if (Server.DisabledSettings.Remove(specificSetting))
                     {
                         await ReplyEmbedAsync("Setting Enabled",
@@ -604,7 +610,7 @@ namespace Xenon.Modules
                 else
                 {
                     await ReplyEmbedAsync("Setting Not Found",
-                        $"Aviable settings: {string.Join(", ", Enum.GetValues(typeof(ServerSettings)).Cast<ServerSettings>().Select(x => $"{x}".ToLower().InlineCode()))}");
+                        $"Aviable settings: {string.Join(", ", Enum.GetValues(typeof(Setting)).Cast<Setting>().Select(x => $"{x}".ToLower().InlineCode()))}");
                 }
             }
             
@@ -613,9 +619,9 @@ namespace Xenon.Modules
             [CheckPermission(GuildPermission.ManageGuild)]
             public async Task DisableSettingAsync([Remainder] string setting)
             {
-                if (Enum.TryParse(typeof(ServerSettings), setting, true, out var specificObject))
+                if (Enum.TryParse(typeof(Setting), setting, true, out var specificObject))
                 {
-                    var specificSetting = (ServerSettings) specificObject;
+                    var specificSetting = (Setting) specificObject;
                     if (Server.DisabledSettings.Add(specificSetting))
                     {
                         await ReplyEmbedAsync("Setting Disabled",
@@ -630,7 +636,85 @@ namespace Xenon.Modules
                 else
                 {
                     await ReplyEmbedAsync("Setting Not Found",
-                        $"Aviable settings: {string.Join(", ", Enum.GetValues(typeof(ServerSettings)).Cast<ServerSettings>().Select(x => $"{x}".ToLower().InlineCode()))}");
+                        $"Aviable settings: {string.Join(", ", Enum.GetValues(typeof(Setting)).Cast<Setting>().Select(x => $"{x}".ToLower().InlineCode()))}");
+                }
+            }
+        }
+        
+        [Group("channelsettings")]
+        [Alias("channelsetting", "cs")]
+        [CommandCategory(CommandCategory.Settings)]
+        [CheckServer]
+        [Summary("Lets you edit the settings of the current channel")]
+        public class ChanneöSettingsModule : CommandBase
+        {
+            [Command("")]
+            public async Task SettingsAsync()
+            {
+                if (!Server.DisabledChannelSettings.ContainsKey(Context.Channel.Id))
+                {
+                    Server.DisabledChannelSettings.Add(Context.Channel.Id, new HashSet<Setting>());
+                }
+                var channelSettings = Server.DisabledChannelSettings[Context.Channel.Id];
+                var settings = Enum.GetValues(typeof(Setting)).Cast<Setting>();
+                await ReplyEmbedAsync("Settings", $"Enabled: {string.Join(", ",  settings.Except(channelSettings).Select(x => $"{x}".ToLower().InlineCode()))}\nDisabled: {string.Join(", ", channelSettings.Select(x => $"{x}".ToLower().InlineCode()))}");
+            }
+
+            [Command("enable")]
+            [Alias("e")]
+            [CheckPermission(GuildPermission.ManageGuild)]
+            public async Task EnableSettingAsync([Remainder] string setting)
+            {
+                if (Enum.TryParse(typeof(Setting), setting, true, out var specificObject))
+                {
+                    var specificSetting = (Setting) specificObject;
+                    
+                    var channelSettings = Server.DisabledChannelSettings[Context.Channel.Id];
+                    if (channelSettings.Remove(specificSetting))
+                    {
+                        Server.DisabledChannelSettings[Context.Channel.Id] = channelSettings;
+                        await ReplyEmbedAsync("Setting Enabled",
+                            $"Enabled the setting {$"{specificSetting}".ToLower().InlineCode()}");
+                    }
+                    else
+                    {
+                        await ReplyEmbedAsync("Already Enabled",
+                            $"The setting {$"{specificSetting}".ToLower().InlineCode()} is already enabled");
+                    }
+                }
+                else
+                {
+                    await ReplyEmbedAsync("Setting Not Found",
+                        $"Aviable settings: {string.Join(", ", Enum.GetValues(typeof(Setting)).Cast<Setting>().Select(x => $"{x}".ToLower().InlineCode()))}");
+                }
+            }
+            
+            [Command("disable")]
+            [Alias("d")]
+            [CheckPermission(GuildPermission.ManageGuild)]
+            public async Task DisableSettingAsync([Remainder] string setting)
+            {
+                if (Enum.TryParse(typeof(Setting), setting, true, out var specificObject))
+                {
+                    var specificSetting = (Setting) specificObject;
+                    
+                    var channelSettings = Server.DisabledChannelSettings[Context.Channel.Id];
+                    if (channelSettings.Add(specificSetting))
+                    {
+                        Server.DisabledChannelSettings[Context.Channel.Id] = channelSettings;
+                        await ReplyEmbedAsync("Setting Disabled",
+                            $"Disabled the setting {$"{specificSetting}".ToLower().InlineCode()}");
+                    }
+                    else
+                    {
+                        await ReplyEmbedAsync("Already Disabled",
+                            $"The setting {$"{specificSetting}".ToLower().InlineCode()} is already disabled");
+                    }
+                }
+                else
+                {
+                    await ReplyEmbedAsync("Setting Not Found",
+                        $"Aviable settings: {string.Join(", ", Enum.GetValues(typeof(Setting)).Cast<Setting>().Select(x => $"{x}".ToLower().InlineCode()))}");
                 }
             }
         }
