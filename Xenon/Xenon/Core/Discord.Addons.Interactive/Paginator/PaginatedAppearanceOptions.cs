@@ -21,11 +21,4 @@ namespace Discord.Addons.Interactive
 
         public TimeSpan? Timeout = null;
     }
-
-    public enum JumpDisplayOptions
-    {
-        Never,
-        WithManageMessages,
-        Always
-    }
 }

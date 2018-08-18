@@ -505,10 +505,19 @@ namespace Xenon.Modules
 
             [Command("")]
             [CheckPermission(GuildPermission.ManageGuild)]
-            public async Task LogChannelAsync(ITextChannel channel)
+            public async Task SetLogChannelAsync(ITextChannel channel)
             {
                 Server.LogChannelId = channel.Id;
                 await ReplyEmbedAsync("Logchannel Set", $"Set the logchannel to {channel.Mention}");
+            }
+            
+            [Command("remove")]
+            [Alias("r", "delete", "d")]
+            [CheckPermission(GuildPermission.ManageGuild)]
+            public async Task RemoveLogChannelAsync()
+            {
+                Server.LogChannelId = null;
+                await ReplyEmbedAsync("Logchannel Removed", $"Removed the logchannel");
             }
         }
 
@@ -530,10 +539,19 @@ namespace Xenon.Modules
 
             [Command("")]
             [CheckPermission(GuildPermission.ManageGuild)]
-            public async Task AnnounceChannelAsync(ITextChannel channel)
+            public async Task SetAnnounceChannelAsync(ITextChannel channel)
             {
                 Server.AnnounceChannelId = channel.Id;
                 await ReplyEmbedAsync("Announcechannel Set", $"Set the announcechannel to {channel.Mention}");
+            }
+            
+            [Command("remove")]
+            [Alias("r", "delete", "d")]
+            [CheckPermission(GuildPermission.ManageGuild)]
+            public async Task RemoveAnnounceChannelAsync()
+            {
+                Server.AnnounceChannelId = null;
+                await ReplyEmbedAsync("Announcechannel Removed", $"Removed the announcechannel");
             }
         }
 
@@ -580,6 +598,15 @@ namespace Xenon.Modules
                         await ReplyEmbedAsync("Autorole Set", $"Set the autorole to {specificRole.Mention}");
                     }
                 }
+            }
+            
+            [Command("remove")]
+            [Alias("r", "delete", "d")]
+            [CheckPermission(GuildPermission.ManageGuild)]
+            public async Task RemoveAutoRoleAsync()
+            {
+                Server.AutoroleId = null;
+                await ReplyEmbedAsync("Autorole Removed", $"Removed the autorole");
             }
         }
 

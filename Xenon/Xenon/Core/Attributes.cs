@@ -50,7 +50,7 @@ namespace Xenon.Core
                         $"This command can only be used in a {"server".InlineCode()} channel");
                 if (!guildUser.GuildPermissions.Has(GuildPermission.Value))
                     return PreconditionResult.FromError(
-                        $"I need the permission {GuildPermission.Value.Humanize(LetterCasing.Title)} to do this");
+                        $"I need the permission {GuildPermission.Value.Humanize(LetterCasing.Title).ToLower().InlineCode()} to do this");
             }
 
             if (!ChannelPermission.HasValue) return PreconditionResult.FromSuccess();
@@ -62,7 +62,7 @@ namespace Xenon.Core
 
             return !perms.Has(ChannelPermission.Value)
                 ? PreconditionResult.FromError(
-                    $"I need the channel permission {ChannelPermission.Value.Humanize(LetterCasing.Title)} to do this")
+                    $"I need the channel permission {ChannelPermission.Value.Humanize(LetterCasing.Title).ToLower().InlineCode()} to do this")
                 : PreconditionResult.FromSuccess();
         }
     }
@@ -102,7 +102,7 @@ namespace Xenon.Core
                 if (!guildUser.GuildPermissions.Has(GuildPermission.Value))
                     return Task.FromResult(
                         PreconditionResult.FromError(
-                            $"You need the permission {GuildPermission.Value.Humanize(LetterCasing.Title)} to do this"));
+                            $"You need the permission {GuildPermission.Value.Humanize(LetterCasing.Title).ToLower().InlineCode()} to do this"));
             }
 
             if (!ChannelPermission.HasValue) return Task.FromResult(PreconditionResult.FromSuccess());
@@ -114,7 +114,7 @@ namespace Xenon.Core
 
             if (!perms.Has(ChannelPermission.Value))
                 return Task.FromResult(PreconditionResult.FromError(
-                    $"You need the channel permission {ChannelPermission.Value.Humanize(LetterCasing.Title)} to do this"));
+                    $"You need the channel permission {ChannelPermission.Value.Humanize(LetterCasing.Title).ToLower().InlineCode()} to do this"));
 
             return Task.FromResult(PreconditionResult.FromSuccess());
         }
@@ -149,7 +149,7 @@ namespace Xenon.Core
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
     public class CheckBotOwnerAttribute : PreconditionAttribute
     {
-        public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context,
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context,
             CommandInfo command, IServiceProvider services)
         {
             switch (context.Client.TokenType)
@@ -158,10 +158,10 @@ namespace Xenon.Core
                     var application = PublicVariables.Application;
                     if (context.User.Id != application.Owner.Id &&
                         !services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
-                        return PreconditionResult.FromError("You are not the owner of this bot!");
-                    return PreconditionResult.FromSuccess();
+                        return Task.FromResult(PreconditionResult.FromError("You are not the owner of this bot!"));
+                    return Task.FromResult(PreconditionResult.FromSuccess());
                 default:
-                    return PreconditionResult.FromError("I just occured an internal error! :(");
+                    return Task.FromResult(PreconditionResult.FromError("I just occured an internal error! :("));
             }
         }
     }
