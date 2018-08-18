@@ -154,9 +154,7 @@ namespace Xenon.Core
             switch (context.Client.TokenType)
             {
                 case TokenType.Bot:
-                    var application = PublicVariables.Application;
-                    if (context.User.Id != application.Owner.Id &&
-                        !services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
+                    if (!services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
                         return Task.FromResult(PreconditionResult.FromError("You are not the owner of this bot!"));
                     return Task.FromResult(PreconditionResult.FromSuccess());
                 default:
