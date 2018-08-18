@@ -37,16 +37,17 @@ namespace Xenon.Services
         public HashSet<ulong> Blacklist = new HashSet<ulong>();
         public BlockingType BlockingType = BlockingType.None;
 
+        public HashSet<CommandCategory> DisabledCategories = new HashSet<CommandCategory>();
+
         public Dictionary<ulong, HashSet<Setting>> DisabledChannelSettings =
             new Dictionary<ulong, HashSet<Setting>>();
 
-        public HashSet<CommandCategory> DisabledCategories = new HashSet<CommandCategory>();
+        public HashSet<Setting> DisabledSettings = new HashSet<Setting>();
         public HashSet<string> JoinMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public HashSet<string> LeaveMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public HashSet<string> LevelUpMessages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<ulong, ModLogItem> ModLog = new Dictionary<ulong, ModLogItem>();
         public HashSet<string> Prefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        public HashSet<Setting> DisabledSettings = new HashSet<Setting>();
         public Dictionary<string, Tag> Tags = new Dictionary<string, Tag>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<ulong, Userxp> Userxps = new Dictionary<ulong, Userxp>();
         public HashSet<ulong> Whitelist = new HashSet<ulong>();

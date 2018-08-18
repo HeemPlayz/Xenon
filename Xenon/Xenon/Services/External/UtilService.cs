@@ -156,9 +156,7 @@ namespace Xenon.Services.External
         public static bool GetChannelSettings(this Server server, ulong channelId, Setting setting)
         {
             if (server.DisabledChannelSettings.TryGetValue(channelId, out var disabled))
-            {
                 return !disabled.Contains(setting);
-            }
 
             return server.GetSetting(setting);
         }

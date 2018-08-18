@@ -4,12 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
 using Xenon.Core;
 using Xenon.Services;
 
@@ -26,6 +24,7 @@ namespace Xenon.Modules
         public class BlockingModule : CommandBase
         {
             [Command("")]
+            [Priority(-1)]
             [Summary("Shows the current blocking type")]
             public async Task BlockingAsync()
             {
@@ -76,6 +75,7 @@ namespace Xenon.Modules
         {
             [Command("")]
             [Summary("Displays all channels in the blacklist")]
+            [Priority(-1)]
             public async Task BlacklistAsync()
             {
                 await ReplyEmbedAsync("Blacklist",
@@ -118,6 +118,7 @@ namespace Xenon.Modules
         public class WhitelistModule : CommandBase
         {
             [Command("")]
+            [Priority(-1)]
             public async Task WhitelistAsync()
             {
                 await ReplyEmbedAsync("Whitelist",
@@ -160,6 +161,7 @@ namespace Xenon.Modules
         public class CategoryModule : CommandBase
         {
             [Command("")]
+            [Priority(-1)]
             [Summary("Shows all enabled/disabled categorys")]
             public async Task Categorys()
             {
@@ -239,6 +241,7 @@ namespace Xenon.Modules
         public class PrefixModule : CommandBase
         {
             [Command("")]
+            [Priority(-1)]
             public async Task PrefixAsync()
             {
                 await ReplyEmbedAsync($"Custom Prefixes",
@@ -289,6 +292,7 @@ namespace Xenon.Modules
         public class JoinMessageModule : CommandBase
         {
             [Command("")]
+            [Priority(-1)]
             [Summary("Shows all joinmessages")]
             public async Task JoinMessageAsync()
             {
@@ -364,6 +368,7 @@ namespace Xenon.Modules
         {
             [Command("")]
             [Summary("Shows all leavemessages")]
+            [Priority(-1)]
             public async Task LeaveMessageAsync()
             {
                 if (!Server.LeaveMessages.Any())
@@ -438,7 +443,7 @@ namespace Xenon.Modules
         {
             [Command("")]
             [Summary("Shows you the current color")]
-            [Priority(10)]
+            [Priority(-1)]
             public async Task ColorAsync()
             {
                 await ReplyEmbedAsync("Color",
@@ -466,7 +471,6 @@ namespace Xenon.Modules
             [Command("")]
             [Summary("Lets you set a custom color")]
             [CheckPermission(GuildPermission.ManageGuild)]
-            [Priority(2)]
             public async Task SetColorAsync(int r, int g, int b)
             {
                 if (new[] {r, g, b}.Any(x => x > 255 || x < 0))
@@ -482,7 +486,7 @@ namespace Xenon.Modules
                     $"Set the custom color to RGB({$"{r}".InlineCode()}, {$"{g}".InlineCode()}, {$"{b}".InlineCode()})");
             }
         }
-        
+
         [Group("logchannel")]
         [Alias("lc")]
         [CommandCategory(CommandCategory.Settings)]
@@ -491,10 +495,12 @@ namespace Xenon.Modules
         public class LogChannelModule : CommandBase
         {
             [Command("")]
+            [Priority(-1)]
             public async Task LogChannelAsync()
             {
                 var channel = Context.Guild.GetTextChannel(Server.LogChannelId.GetValueOrDefault());
-                await ReplyEmbedAsync("Logchannel", $"The logchannel is {(channel == null ? "not set" : $"{channel.Mention}")}");
+                await ReplyEmbedAsync("Logchannel",
+                    $"The logchannel is {(channel == null ? "not set" : $"{channel.Mention}")}");
             }
 
             [Command("")]
@@ -505,7 +511,7 @@ namespace Xenon.Modules
                 await ReplyEmbedAsync("Logchannel Set", $"Set the logchannel to {channel.Mention}");
             }
         }
-        
+
         [Group("announcechannel")]
         [Alias("ac")]
         [CommandCategory(CommandCategory.Settings)]
@@ -514,10 +520,12 @@ namespace Xenon.Modules
         public class AnnounceChannelModule : CommandBase
         {
             [Command("")]
+            [Priority(-1)]
             public async Task AnnouceChannelAsync()
             {
                 var channel = Context.Guild.GetTextChannel(Server.AnnounceChannelId.GetValueOrDefault());
-                await ReplyEmbedAsync("Announcechannel", $"The announcechannel is {(channel == null ? "not set" : $"{channel.Mention}")}");
+                await ReplyEmbedAsync("Announcechannel",
+                    $"The announcechannel is {(channel == null ? "not set" : $"{channel.Mention}")}");
             }
 
             [Command("")]
@@ -528,7 +536,7 @@ namespace Xenon.Modules
                 await ReplyEmbedAsync("Announcechannel Set", $"Set the announcechannel to {channel.Mention}");
             }
         }
-        
+
         [Group("autorole")]
         [Alias("ar")]
         [CommandCategory(CommandCategory.Settings)]
@@ -537,6 +545,7 @@ namespace Xenon.Modules
         public class AutoRoleModule : CommandBase
         {
             [Command("")]
+            [Priority(-1)]
             public async Task AutoRoleAsync()
             {
                 var role = Context.Guild.GetRole(Server.AutoroleId.GetValueOrDefault());
@@ -568,12 +577,12 @@ namespace Xenon.Modules
                     else
                     {
                         Server.AutoroleId = specificRole.Id;
-                        await ReplyEmbedAsync("Autorole Set", $"Set the autorole to {specificRole.Mention}");                        
+                        await ReplyEmbedAsync("Autorole Set", $"Set the autorole to {specificRole.Mention}");
                     }
                 }
             }
         }
-        
+
         [Group("settings")]
         [Alias("setting", "s")]
         [CommandCategory(CommandCategory.Settings)]
@@ -582,10 +591,12 @@ namespace Xenon.Modules
         public class ServerSettingsModule : CommandBase
         {
             [Command("")]
+            [Priority(-1)]
             public async Task SettingsAsync()
             {
                 var settings = Enum.GetValues(typeof(Setting)).Cast<Setting>();
-                await ReplyEmbedAsync("Settings", $"Enabled: {string.Join(", ",  settings.Except(Server.DisabledSettings).Select(x => $"{x}".ToLower().InlineCode()))}\nDisabled: {string.Join(", ", Server.DisabledSettings.Select(x => $"{x}".ToLower().InlineCode()))}");
+                await ReplyEmbedAsync("Settings",
+                    $"Enabled: {string.Join(", ", settings.Except(Server.DisabledSettings).Select(x => $"{x}".ToLower().InlineCode()))}\nDisabled: {string.Join(", ", Server.DisabledSettings.Select(x => $"{x}".ToLower().InlineCode()))}");
             }
 
             [Command("enable")]
@@ -597,15 +608,11 @@ namespace Xenon.Modules
                 {
                     var specificSetting = (Setting) specificObject;
                     if (Server.DisabledSettings.Remove(specificSetting))
-                    {
                         await ReplyEmbedAsync("Setting Enabled",
                             $"Enabled the setting {$"{specificSetting}".ToLower().InlineCode()}");
-                    }
                     else
-                    {
                         await ReplyEmbedAsync("Already Enabled",
                             $"The setting {$"{specificSetting}".ToLower().InlineCode()} is already enabled");
-                    }
                 }
                 else
                 {
@@ -613,7 +620,7 @@ namespace Xenon.Modules
                         $"Aviable settings: {string.Join(", ", Enum.GetValues(typeof(Setting)).Cast<Setting>().Select(x => $"{x}".ToLower().InlineCode()))}");
                 }
             }
-            
+
             [Command("disable")]
             [Alias("d")]
             [CheckPermission(GuildPermission.ManageGuild)]
@@ -623,15 +630,11 @@ namespace Xenon.Modules
                 {
                     var specificSetting = (Setting) specificObject;
                     if (Server.DisabledSettings.Add(specificSetting))
-                    {
                         await ReplyEmbedAsync("Setting Disabled",
                             $"Disabled the setting {$"{specificSetting}".ToLower().InlineCode()}");
-                    }
                     else
-                    {
                         await ReplyEmbedAsync("Already Disabled",
                             $"The setting {$"{specificSetting}".ToLower().InlineCode()} is already disabled");
-                    }
                 }
                 else
                 {
@@ -640,24 +643,24 @@ namespace Xenon.Modules
                 }
             }
         }
-        
+
         [Group("channelsettings")]
         [Alias("channelsetting", "cs")]
         [CommandCategory(CommandCategory.Settings)]
         [CheckServer]
         [Summary("Lets you edit the settings of the current channel")]
-        public class ChanneöSettingsModule : CommandBase
+        public class ChannelSettingsModule : CommandBase
         {
             [Command("")]
+            [Priority(-1)]
             public async Task SettingsAsync()
             {
                 if (!Server.DisabledChannelSettings.ContainsKey(Context.Channel.Id))
-                {
                     Server.DisabledChannelSettings.Add(Context.Channel.Id, new HashSet<Setting>());
-                }
                 var channelSettings = Server.DisabledChannelSettings[Context.Channel.Id];
                 var settings = Enum.GetValues(typeof(Setting)).Cast<Setting>();
-                await ReplyEmbedAsync("Settings", $"Enabled: {string.Join(", ",  settings.Except(channelSettings).Select(x => $"{x}".ToLower().InlineCode()))}\nDisabled: {string.Join(", ", channelSettings.Select(x => $"{x}".ToLower().InlineCode()))}");
+                await ReplyEmbedAsync("Settings",
+                    $"Enabled: {string.Join(", ", settings.Except(channelSettings).Select(x => $"{x}".ToLower().InlineCode()))}\nDisabled: {string.Join(", ", channelSettings.Select(x => $"{x}".ToLower().InlineCode()))}");
             }
 
             [Command("enable")]
@@ -668,7 +671,7 @@ namespace Xenon.Modules
                 if (Enum.TryParse(typeof(Setting), setting, true, out var specificObject))
                 {
                     var specificSetting = (Setting) specificObject;
-                    
+
                     var channelSettings = Server.DisabledChannelSettings[Context.Channel.Id];
                     if (channelSettings.Remove(specificSetting))
                     {
@@ -688,7 +691,7 @@ namespace Xenon.Modules
                         $"Aviable settings: {string.Join(", ", Enum.GetValues(typeof(Setting)).Cast<Setting>().Select(x => $"{x}".ToLower().InlineCode()))}");
                 }
             }
-            
+
             [Command("disable")]
             [Alias("d")]
             [CheckPermission(GuildPermission.ManageGuild)]
@@ -697,7 +700,7 @@ namespace Xenon.Modules
                 if (Enum.TryParse(typeof(Setting), setting, true, out var specificObject))
                 {
                     var specificSetting = (Setting) specificObject;
-                    
+
                     var channelSettings = Server.DisabledChannelSettings[Context.Channel.Id];
                     if (channelSettings.Add(specificSetting))
                     {

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Sparrow.Platform.Posix;
 using Xenon.Core;
 using Xenon.Services;
 using ActionType = Xenon.Services.ActionType;
@@ -98,12 +97,14 @@ namespace Xenon.Modules
         [CheckPermission(ChannelPermission.MuteMembers)]
         [CheckBotPermission(GuildPermission.ManageRoles)]
         [Summary("Mutes a user for a given reason")]
-        public async Task MuteAsync([CheckUserHierarchy] [CheckBotHierarchy] SocketGuildUser user, [Remainder] string reason = null)
+        public async Task MuteAsync([CheckUserHierarchy] [CheckBotHierarchy]
+            SocketGuildUser user, [Remainder] string reason = null)
         {
             var roleName = $"{Context.Client.CurrentUser.Username}-Muted";
             var role = Context.Guild.Roles.All(x => x.Name != roleName)
                 ? Context.Guild.GetRole(
-                    (await Context.Guild.CreateRoleAsync(roleName, new GuildPermissions(sendMessages: false, addReactions: false, speak: false))).Id)
+                    (await Context.Guild.CreateRoleAsync(roleName,
+                        new GuildPermissions(sendMessages: false, addReactions: false, speak: false))).Id)
                 : Context.Guild.Roles.FirstOrDefault(x => x.Name == roleName);
 
             if (user.Roles.Contains(role))
@@ -111,17 +112,14 @@ namespace Xenon.Modules
                 await ReplyEmbedAsync("Already Muted", $"{user.Mention} is already muted");
                 return;
             }
-            
-            var overwritePermissions = new OverwritePermissions(sendMessages: PermValue.Deny, addReactions: PermValue.Deny, speak: PermValue.Deny);
+
+            var overwritePermissions = new OverwritePermissions(sendMessages: PermValue.Deny,
+                addReactions: PermValue.Deny, speak: PermValue.Deny);
             var overwrite = new Overwrite(role.Id, PermissionTarget.Role, overwritePermissions);
 
             foreach (var channel in Context.Guild.Channels)
-            {
                 if (!channel.PermissionOverwrites.Contains(overwrite))
-                {
                     await channel.AddPermissionOverwriteAsync(role, overwritePermissions);
-                }
-            }
         }
 
         [Command("bulk")]
@@ -132,7 +130,8 @@ namespace Xenon.Modules
         {
             var oldChannel = (ITextChannel) Context.Channel;
             await oldChannel.DeleteAsync();
-            var channel = (ITextChannel) await Context.Guild.CreateTextChannelAsync(Context.Channel.Name, x =>
+            var channel = (ITextChannel) await Context.Guild.CreateTextChannelAsync(Context.Channel.Name);
+            await channel.ModifyAsync(x =>
             {
                 x.IsNsfw = oldChannel.IsNsfw;
                 x.Topic = oldChannel.Topic;
@@ -167,6 +166,7 @@ namespace Xenon.Modules
         {
             [Command("")]
             [Summary("Edits the reason of a log item")]
+            [Priority(-1)]
             public async Task ReasonAsync(ulong id, [Remainder] string reason)
             {
                 if (Server.ModLog.TryGetValue(id, out var logItem))
@@ -191,6 +191,7 @@ namespace Xenon.Modules
 
             [Command("")]
             [Summary("Shows the reason of a log item")]
+            [Priority(-1)]
             public async Task ReasonAsync(ulong id)
             {
                 if (Server.ModLog.TryGetValue(id, out var logItem))
@@ -210,6 +211,7 @@ namespace Xenon.Modules
         {
             [Command("")]
             [Summary("Shows all log items")]
+            [Priority(-1)]
             public async Task LogAsync()
             {
                 var logItems = Server.ModLog.Take(10);
@@ -227,6 +229,7 @@ namespace Xenon.Modules
 
             [Command("")]
             [Summary("Shows all log items with a specific type")]
+            [Priority(-1)]
             public async Task LogAsync([Remainder] string category)
             {
                 if (Enum.TryParse(typeof(ActionType), category, true, out var specificObject))
@@ -254,6 +257,7 @@ namespace Xenon.Modules
 
             [Command("")]
             [Summary("Shows all log items with a specific user")]
+            [Priority(-1)]
             public async Task LogAsync(IUser user)
             {
                 var logItems = Server.ModLog

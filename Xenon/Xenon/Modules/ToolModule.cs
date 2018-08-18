@@ -4,10 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
 using RiotSharp;
-using RiotSharp.Misc;
-using Voltaic;
 using Xenon.Core;
-using Xenon.Services;
 
 namespace Xenon.Modules
 {
@@ -22,7 +19,7 @@ namespace Xenon.Modules
             _configuration = configuration;
             _riotApi = RiotApi.GetInstance(_configuration.LolApiKey, 1500, 90000);
         }
-        
+
         [Command("encode")]
         [Alias("ec")]
         [Summary("Encodes some text")]

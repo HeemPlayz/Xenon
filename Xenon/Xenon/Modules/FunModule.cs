@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -161,6 +160,7 @@ namespace Xenon.Modules
 
             [Command("")]
             [Summary("Sends a random gif")]
+            [Priority(-1)]
             public async Task GifAsync()
             {
                 var gif = await _giphy.RandomGif(new RandomParameter());
@@ -172,6 +172,7 @@ namespace Xenon.Modules
 
             [Command("")]
             [Summary("Searches a gif from your query")]
+            [Priority(-1)]
             public async Task GifAsync([Remainder] string query)
             {
                 var gif = await _giphy.GifSearch(new SearchParameter {Query = query});

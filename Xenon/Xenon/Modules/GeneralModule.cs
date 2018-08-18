@@ -125,6 +125,7 @@ namespace Xenon.Modules
 
             [Command("")]
             [Summary("Displays information about a specific command or all commands with a specific category")]
+            [Priority(-1)]
             public async Task HelpAsync(string command)
             {
                 var result = _commands.Search(command);
@@ -215,6 +216,7 @@ namespace Xenon.Modules
 
             [Command("")]
             [Summary("Displays all commands")]
+            [Priority(-1)]
             public async Task HelpAsync()
             {
                 var embeds = new List<EmbedBuilder>();
@@ -261,7 +263,9 @@ namespace Xenon.Modules
                 }
 
                 if (embeds.Count == 1)
+                {
                     await ReplyAsync(embed: embeds.First().Build());
+                }
                 else
                 {
                     embeds = MoreEnumerable.ToHashSet(embeds).ToList();

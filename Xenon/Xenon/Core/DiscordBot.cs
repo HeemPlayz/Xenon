@@ -165,10 +165,22 @@ namespace Xenon.Core
                 case CommandError.UnknownCommand:
                     break;
                 case CommandError.BadArgCount:
-                    break;
                 case CommandError.ParseFailed:
                 case CommandError.ObjectNotFound:
                     var searchResult = _commands.Search(context, parameters);
+                    if (result.Error == CommandError.BadArgCount)
+                    {
+                        var command = searchResult.Commands.First();
+                        var preconditionResult = await command.CheckPreconditionsAsync(context, _services);
+                        if (preconditionResult.Error != CommandError.BadArgCount)
+                        {
+                            embed.WithTitle("Missing Permissions")
+                                .WithDescription(preconditionResult.ErrorReason ?? "what the actual fuck");
+                            await context.Channel.SendMessageAsync(embed: embed.Build());
+                            break;
+                        }
+                    }
+
                     embed.WithTitle(
                             $"{searchResult.Commands.First().Command.Name.Humanize(LetterCasing.Title)} Command Usage")
                         .WithDescription(string.IsNullOrWhiteSpace(searchResult.Commands.First().Command.Module.Group)
