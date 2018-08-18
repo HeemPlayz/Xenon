@@ -32,39 +32,39 @@ namespace Discord.Addons.Interactive
         public InteractiveService Interactive { get; }
         public IUserMessage Message { get; private set; }
 
-        private PaginatedAppearanceOptions Options => _pager.Options;
+        private PaginatedAppearanceOptions options => _pager.Options;
         public SocketCommandContext Context { get; }
 
         public RunMode RunMode => RunMode.Sync;
         public ICriterion<SocketReaction> Criterion { get; }
 
-        public TimeSpan? Timeout => Options.Timeout;
+        public TimeSpan? Timeout => options.Timeout;
 
         public async Task<bool> HandleCallbackAsync(SocketReaction reaction)
         {
             var emote = reaction.Emote;
 
-            if (emote.Equals(Options.First))
+            if (emote.Equals(options.First))
             {
                 page = 1;
             }
-            else if (emote.Equals(Options.Next))
+            else if (emote.Equals(options.Next))
             {
                 if (page >= pages)
                     return false;
                 ++page;
             }
-            else if (emote.Equals(Options.Back))
+            else if (emote.Equals(options.Back))
             {
                 if (page <= 1)
                     return false;
                 --page;
             }
-            else if (emote.Equals(Options.Last))
+            else if (emote.Equals(options.Last))
             {
                 page = pages;
             }
-            else if (emote.Equals(Options.Stop))
+            else if (emote.Equals(options.Stop))
             {
                 await Message.DeleteAsync().ConfigureAwait(false);
                 return true;
@@ -83,11 +83,11 @@ namespace Discord.Addons.Interactive
             // Reactions take a while to add, don't wait for them
             _ = Task.Run(async () =>
             {
-                await message.AddReactionAsync(Options.First);
-                await message.AddReactionAsync(Options.Back);
-                await message.AddReactionAsync(Options.Stop);
-                await message.AddReactionAsync(Options.Next);
-                await message.AddReactionAsync(Options.Last);
+                await message.AddReactionAsync(options.First);
+                await message.AddReactionAsync(options.Back);
+                await message.AddReactionAsync(options.Stop);
+                await message.AddReactionAsync(options.Next);
+                await message.AddReactionAsync(options.Last);
             });
             if (Timeout != null)
                 _ = Task.Delay(Timeout.Value).ContinueWith(_ =>
@@ -100,7 +100,7 @@ namespace Discord.Addons.Interactive
         private Embed BuildEmbed()
         {
             return _pager.Pages.ToArray()[page - 1]
-                .WithFooter(string.Format(Options.FooterFormat, page, pages))
+                .WithFooter(string.Format(options.FooterFormat, page, pages))
                 .Build();
         }
 
