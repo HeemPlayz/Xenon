@@ -37,7 +37,7 @@ namespace Xenon.Services.External
         {
             foreach (var shard in _client.Shards)
             {
-                await shard.SetActivityAsync(new Game($"for commands | shard {shard.ShardId}/{_client.Shards.Count} | {_client.Guilds.Count} servers", ActivityType.Watching));
+                await shard.SetActivityAsync(new Game($"for commands | shard {shard.ShardId + 1}/{_client.Shards.Count} | {_client.Guilds.Count} servers", ActivityType.Watching));
             }
 
             await _listcord.PostBotGuildsAsync(_client.CurrentUser.Id, (ulong) _client.Guilds.Count);

@@ -64,6 +64,7 @@ namespace Xenon.Core
                 .AddSingleton(_interactive)
                 .AddSingleton(_http)
                 .AddSingleton(new Giphy(_configuration.GiphyApiKey))
+                .AddSingleton<StatisticsService>()
                 .AddSingleton<Random>()
                 .AddSingleton<LogService>()
                 .AddSingleton<CachingService>()
@@ -71,6 +72,7 @@ namespace Xenon.Core
                 .AddSingleton<NsfwService>()
                 .BuildServiceProvider();
             _services.GetService<LogService>();
+            _services.GetService<StatisticsService>();
             _client.MessageReceived += MessageReceived;
             _client.ReactionAdded += ReactionAdded;
             _client.Log += Log;
