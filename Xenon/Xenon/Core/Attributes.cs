@@ -36,7 +36,7 @@ namespace Xenon.Core
         public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context,
             CommandInfo command, IServiceProvider services)
         {
-            if (context.User.Id == PublicVariables.Application.Owner.Id ||
+            if (
                 services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
                 return PreconditionResult.FromSuccess();
             IGuildUser guildUser = null;
@@ -88,8 +88,7 @@ namespace Xenon.Core
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command,
             IServiceProvider services)
         {
-            if (context.User.Id == PublicVariables.Application.Owner.Id ||
-                services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
+            if (services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
                 return Task.FromResult(PreconditionResult.FromSuccess());
             var guildUser = context.User as IGuildUser;
 
@@ -172,8 +171,7 @@ namespace Xenon.Core
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command,
             IServiceProvider services)
         {
-            if (context.User.Id == PublicVariables.Application.Owner.Id ||
-                services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
+            if (services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
                 return Task.FromResult(PreconditionResult.FromSuccess());
             return Task.FromResult(context.Guild == null
                 ? PreconditionResult.FromError($"This command is only aviable in {"server".InlineCode()} channels")
@@ -206,8 +204,7 @@ namespace Xenon.Core
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, ParameterInfo parameter,
             object value, IServiceProvider services)
         {
-            if (context.User.Id == PublicVariables.Application.Owner.Id ||
-                services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
+            if (services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
                 return Task.FromResult(PreconditionResult.FromSuccess());
             var user = (context as SocketCommandContext)?.Guild.CurrentUser;
             if (value is SocketGuildUser target && user != null)
@@ -225,8 +222,7 @@ namespace Xenon.Core
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command,
             IServiceProvider services)
         {
-            if (context.User.Id == PublicVariables.Application.Owner.Id ||
-                services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
+            if (services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
                 return Task.FromResult(PreconditionResult.FromSuccess());
             var caching = services.GetService<CachingService>();
             if (caching.ExecutionObjects.TryGetValue(context.Message.Id, out var executionObj))

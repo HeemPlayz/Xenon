@@ -510,7 +510,7 @@ namespace Xenon.Modules
                 Server.LogChannelId = channel.Id;
                 await ReplyEmbedAsync("Logchannel Set", $"Set the logchannel to {channel.Mention}");
             }
-            
+
             [Command("remove")]
             [Alias("r", "delete", "d")]
             [CheckPermission(GuildPermission.ManageGuild)]
@@ -544,7 +544,7 @@ namespace Xenon.Modules
                 Server.AnnounceChannelId = channel.Id;
                 await ReplyEmbedAsync("Announcechannel Set", $"Set the announcechannel to {channel.Mention}");
             }
-            
+
             [Command("remove")]
             [Alias("r", "delete", "d")]
             [CheckPermission(GuildPermission.ManageGuild)]
@@ -599,7 +599,7 @@ namespace Xenon.Modules
                     }
                 }
             }
-            
+
             [Command("remove")]
             [Alias("r", "delete", "d")]
             [CheckPermission(GuildPermission.ManageGuild)]

@@ -25,7 +25,6 @@ namespace Xenon.Core
 {
     public class DiscordBot
     {
-        private readonly int _shardCount = 1;
         private DiscordShardedClient _client;
         private CommandService _commands;
         private Configuration _configuration;
@@ -40,14 +39,13 @@ namespace Xenon.Core
             _configuration = ConfigurationService.LoadNewConfig();
             _database = new DatabaseService(_configuration);
             _http = new HttpClient();
-            _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("DiscordBot", "0.9"));
             _client = new DiscordShardedClient(new DiscordSocketConfig
             {
                 AlwaysDownloadUsers = true,
                 DefaultRetryMode = RetryMode.AlwaysRetry,
                 LogLevel = LogSeverity.Info,
                 MessageCacheSize = 2048,
-                TotalShards = _shardCount
+                TotalShards = _configuration.ShardCount
             });
             _commands = new CommandService(new CommandServiceConfig
             {
@@ -88,8 +86,9 @@ namespace Xenon.Core
             await Task.Delay(-1);
         }
 
-        private async Task Ready(DiscordSocketClient arg)
+        private async Task Ready(DiscordSocketClient client)
         {
+            _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(_client.CurrentUser.Username));
             PublicVariables.Application = await _client.GetApplicationInfoAsync();
         }
 

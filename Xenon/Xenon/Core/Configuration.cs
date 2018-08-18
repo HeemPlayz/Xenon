@@ -34,5 +34,7 @@ namespace Xenon.Core
         [JsonProperty("LolApiKey")] public readonly string LolApiKey = "";
 
         [JsonProperty("OwnerIds")] public readonly ulong[] OwnerIds = Array.Empty<ulong>();
+
+        [JsonProperty("ShardCount")] public readonly int ShardCount = 1;
     }
 }

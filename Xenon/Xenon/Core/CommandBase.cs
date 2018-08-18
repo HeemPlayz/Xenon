@@ -37,11 +37,10 @@ namespace Xenon.Core
         protected override void AfterExecute(CommandInfo command)
         {
             var executionObj = Caching.ExecutionObjects[Context.Message.Id];
-            //if (executionObj.Server != Server)
             Database.Execute(x =>
             {
                 x.Store(Server);
-                x.SaveChanges();
+                if (x.Advanced.HasChanges) x.SaveChanges();
             });
             Caching.ExecutionObjects.Remove(Context.Message.Id);
         }
