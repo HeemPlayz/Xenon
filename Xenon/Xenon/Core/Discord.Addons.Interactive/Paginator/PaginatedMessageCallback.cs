@@ -83,11 +83,11 @@ namespace Discord.Addons.Interactive
             // Reactions take a while to add, don't wait for them
             _ = Task.Run(async () =>
             {
-                _ = message.AddReactionAsync(Options.First);
-                _ = message.AddReactionAsync(Options.Back);
-                _ = message.AddReactionAsync(Options.Stop);
-                _ = message.AddReactionAsync(Options.Next);
-                _ = message.AddReactionAsync(Options.Last);
+                await message.AddReactionAsync(Options.First);
+                await message.AddReactionAsync(Options.Back);
+                await message.AddReactionAsync(Options.Stop);
+                await message.AddReactionAsync(Options.Next);
+                await message.AddReactionAsync(Options.Last);
             });
             if (Timeout != null)
                 _ = Task.Delay(Timeout.Value).ContinueWith(_ =>
