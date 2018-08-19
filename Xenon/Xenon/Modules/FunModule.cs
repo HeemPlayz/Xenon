@@ -143,6 +143,48 @@ namespace Xenon.Modules
             await ReplyAsync(url);
         }
 
+        [Command("rip")]
+        [Alias("tombstone")]
+        [Summary("Sends a tombstone with a custom text")]
+        public async Task RipAsync([Remainder] string text)
+        {
+            var url = "http://tombstonebuilder.com/generate.php" +
+                      "?top1=R.I.P." +
+                      $"&top2={HttpUtility.UrlEncode(text.Substring(0, Math.Min(text.Length, 25)))}" +
+                      $"{(text.Length > 25 ? $"&top3={HttpUtility.UrlEncode(text.Substring(25, Math.Min(25, text.Length - 25)))}" : "")}" +
+                      $"{(text.Length > 50 ? $"&top4={HttpUtility.UrlEncode(text.Substring(50))}" : "")}";
+            await ReplyEmbedAsync(new EmbedBuilder().WithImageUrl(url));
+        }
+
+        [Command("sign")]
+        [Alias("roadsign")]
+        [Summary("Sends a roadsign with a custom text")]
+        public async Task SignAsync([Remainder] string text)
+        {
+            var url = $"http://www.customroadsign.com/generate.php" +
+                      $"?line1={HttpUtility.UrlEncode(text.Substring(0, Math.Min(15, text.Length)))}" +
+                      $"{(text.Length > 15 ? $"&line2={HttpUtility.UrlEncode(text.Substring(15, Math.Min(15, text.Length - 15)))}" : "")}" +
+                      $"{(text.Length > 30 ? $"&line3={HttpUtility.UrlEncode(text.Substring(30, Math.Min(30, text.Length - 30)))}" : "")}" +
+                      $"{(text.Length > 45 ? $"&line4={HttpUtility.UrlEncode(text.Substring(45, Math.Min(45, text.Length - 45)))}" : "")}";
+            await ReplyEmbedAsync(new EmbedBuilder().WithImageUrl(url));
+        }
+
+        [Command("qr")]
+        [Alias("qrcode")]
+        [Summary("Creates a qr code")]
+        public async Task QrAsync([Remainder] string text)
+        {
+            await ReplyEmbedAsync(new EmbedBuilder().WithImageUrl(
+                $"https://chart.googleapis.com/chart?cht=qr&chl={HttpUtility.UrlEncode(text)}&choe=UTF-8&chld=L&chs=500x500"));
+        }
+
+        [Command("ascii")]
+        [Summary("Converts text to the ascii format")]
+        public async Task AsciiAsync([Remainder] string text)
+        {
+            await ReplyAsync($"{await _http.GetStringAsync($"http://artii.herokuapp.com/make?text={text}")}".BlockCode());
+        }
+
         [Group("gif")]
         [Alias("giphy", "g")]
         [CommandCategory(CommandCategory.Fun)]

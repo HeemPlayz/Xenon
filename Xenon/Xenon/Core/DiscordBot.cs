@@ -173,10 +173,10 @@ namespace Xenon.Core
                     {
                         var command = searchResult.Commands.First();
                         var preconditionResult = await command.CheckPreconditionsAsync(context, _services);
-                        if (preconditionResult.Error != CommandError.BadArgCount)
+                        if (!preconditionResult.IsSuccess && preconditionResult.Error != CommandError.BadArgCount)
                         {
                             embed.WithTitle("Missing Permissions")
-                                .WithDescription(preconditionResult.ErrorReason ?? "what the actual fuck");
+                                .WithDescription(preconditionResult.ErrorReason);
                             await context.Channel.SendMessageAsync(embed: embed.Build());
                             break;
                         }

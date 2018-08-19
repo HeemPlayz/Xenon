@@ -244,7 +244,7 @@ namespace Xenon.Modules
             [Priority(-1)]
             public async Task PrefixAsync()
             {
-                await ReplyEmbedAsync($"Custom Prefixes",
+                await ReplyEmbedAsync("Custom Prefixes",
                     Server.Prefixes.Any()
                         ? $"The custom prefixes are {string.Join(", ", Server.Prefixes.Select(x => x.InlineCode()))}"
                         : "There are no custom prefixes for this server");
@@ -281,7 +281,7 @@ namespace Xenon.Modules
             public async Task ClearPrefixesAsync()
             {
                 Server.Prefixes.Clear();
-                await ReplyEmbedAsync("Prefixes Cleared", $"Removed all custom prefixes");
+                await ReplyEmbedAsync("Prefixes Cleared", "Removed all custom prefixes");
             }
         }
 
@@ -328,7 +328,7 @@ namespace Xenon.Modules
             {
                 if (!Server.JoinMessages.Any())
                 {
-                    await ReplyEmbedAsync("No Joinmessages", $"There are no custom joinmessages");
+                    await ReplyEmbedAsync("No Joinmessages", "There are no custom joinmessages");
                     return;
                 }
 
@@ -336,7 +336,7 @@ namespace Xenon.Modules
                 {
                     if (Server.JoinMessages.Count == 1)
                         await ReplyEmbedAsync("Message Not Found",
-                            $"You can only select the number {$"1".InlineCode()}");
+                            $"You can only select the number {"1".InlineCode()}");
                     else
                         await ReplyEmbedAsync("Message Not Found",
                             $"You have to select a number between {"1".InlineCode()} and {$"{Server.JoinMessages.Count}".InlineCode()}");
@@ -356,7 +356,7 @@ namespace Xenon.Modules
             public async Task ClearJoinMessageAsync()
             {
                 Server.JoinMessages.Clear();
-                await ReplyEmbedAsync("Joinmessages Cleared", $"Removed all custom joinmessages");
+                await ReplyEmbedAsync("Joinmessages Cleared", "Removed all custom joinmessages");
             }
         }
 
@@ -403,7 +403,7 @@ namespace Xenon.Modules
             {
                 if (!Server.LeaveMessages.Any())
                 {
-                    await ReplyEmbedAsync("No Leavemessages", $"There are no custom leavemessages");
+                    await ReplyEmbedAsync("No Leavemessages", "There are no custom leavemessages");
                     return;
                 }
 
@@ -411,7 +411,7 @@ namespace Xenon.Modules
                 {
                     if (Server.LeaveMessages.Count == 1)
                         await ReplyEmbedAsync("Message Not Found",
-                            $"You can only select the number {$"1".InlineCode()}");
+                            $"You can only select the number {"1".InlineCode()}");
                     else
                         await ReplyEmbedAsync("Message Not Found",
                             $"You have to select a number between {"1".InlineCode()} and {$"{Server.LeaveMessages.Count}".InlineCode()}");
@@ -431,7 +431,7 @@ namespace Xenon.Modules
             public async Task ClearLeaveMessageAsync()
             {
                 Server.LeaveMessages.Clear();
-                await ReplyEmbedAsync("Leavemessages Cleared", $"Removed all custom leavemessages");
+                await ReplyEmbedAsync("Leavemessages Cleared", "Removed all custom leavemessages");
             }
         }
 
@@ -517,7 +517,7 @@ namespace Xenon.Modules
             public async Task RemoveLogChannelAsync()
             {
                 Server.LogChannelId = null;
-                await ReplyEmbedAsync("Logchannel Removed", $"Removed the logchannel");
+                await ReplyEmbedAsync("Logchannel Removed", "Removed the logchannel");
             }
         }
 
@@ -551,7 +551,7 @@ namespace Xenon.Modules
             public async Task RemoveAnnounceChannelAsync()
             {
                 Server.AnnounceChannelId = null;
-                await ReplyEmbedAsync("Announcechannel Removed", $"Removed the announcechannel");
+                await ReplyEmbedAsync("Announcechannel Removed", "Removed the announcechannel");
             }
         }
 
@@ -585,12 +585,12 @@ namespace Xenon.Modules
                     if (specificRole.Position >= Context.Guild.CurrentUser.Hierarchy)
                     {
                         await ReplyEmbedAsync("Missing Permissions",
-                            $"I have not enough permissions to assign this role");
+                            "I have not enough permissions to assign this role");
                     }
                     else if (specificRole.Position >= (Context.User as SocketGuildUser).Hierarchy)
                     {
                         await ReplyEmbedAsync("Missing Permissions",
-                            $"You have not enough permissions to assign this role");
+                            "You have not enough permissions to assign this role");
                     }
                     else
                     {
@@ -606,7 +606,7 @@ namespace Xenon.Modules
             public async Task RemoveAutoRoleAsync()
             {
                 Server.AutoroleId = null;
-                await ReplyEmbedAsync("Autorole Removed", $"Removed the autorole");
+                await ReplyEmbedAsync("Autorole Removed", "Removed the autorole");
             }
         }
 
