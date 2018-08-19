@@ -10,6 +10,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
 using MoreLinq;
+using Raven.Client.Documents.Linq;
 using Xenon.Core;
 using Xenon.Services;
 using Xenon.Services.External;
@@ -330,7 +331,7 @@ namespace Xenon.Modules
                         AuthorId = Context.User.Id,
                         Name = name,
                         Message = message,
-                        TimeStamp = DateTime.Now
+                        TimeStamp = DateTimeOffset.Now
                     };
                     await ReplyEmbedAsync("Tag Added", $"Added the tag {tag.Name.InlineCode()}");
                 }
@@ -379,7 +380,7 @@ namespace Xenon.Modules
                         AuthorId = Context.User.Id,
                         Message = "None set",
                         Name = tag,
-                        TimeStamp = DateTime.Now
+                        TimeStamp = DateTimeOffset.Now
                     };
                 }
 
@@ -489,6 +490,22 @@ namespace Xenon.Modules
                 Server.Tags.Remove(name);
             }
 
+            [Command("delete")]
+            [Alias("d", "del")]
+            public async Task DeleteAsync([Remainder] string tag)
+            {
+                if (Server.Tags.TryGetValue(tag, out var specificTag))
+                {
+                    if (!CheckPermissions(specificTag)) return;
+                    Server.Tags.Remove(tag);
+                    await ReplyEmbedAsync("Tag Removed", $"Removed the tag {specificTag.Name.InlineCode()}");
+                }
+                else
+                {
+                    await ReplyEmbedAsync("Tag Not Found", $"Couldn't find a tag for {tag.InlineCode()}");
+                }
+            }
+
             [Command("all")]
             public async Task AllTagsAsync()
             {
@@ -500,23 +517,18 @@ namespace Xenon.Modules
 
                 if (Server.Tags.Count > 8)
                 {
-                    var pages = new List<EmbedBuilder>();
                     var seperatedTags = Server.Tags.Batch(8);
-                    foreach (var tags in seperatedTags)
-                    {
-                        var tagList = tags.Select(tag =>
-                                $"❯ {tag.Value.Name} ({(DateTime.Now - tag.Value.TimeStamp).Humanize()}) ago")
-                            .ToList();
-                        var embed = NormalizeEmbed("Tags", string.Join("\n", tagList));
-                        pages.Add(embed);
-                    }
+                    var pages = seperatedTags.Select(tags => tags.Select(tag => $"❯ {tag.Value.Name} ({(DateTime.Now - tag.Value.TimeStamp).Humanize()}) ago")
+                            .ToList())
+                        .Select(tagList => NormalizeEmbed("Tags", string.Join("\n", tagList)))
+                        .ToList();
 
                     await PagedReplyAsync(pages);
                 }
                 else
                 {
                     var descriptions = Server.Tags.Select(tag =>
-                        $"❯ {tag.Value.Name} ({(DateTime.Now - tag.Value.TimeStamp).Humanize()})");
+                        $"❯ {tag.Value.Name} ({(DateTimeOffset.Now - tag.Value.TimeStamp).Humanize()} ago)");
                     await ReplyEmbedAsync("Tags", string.Join("\n", descriptions));
                 }
             }

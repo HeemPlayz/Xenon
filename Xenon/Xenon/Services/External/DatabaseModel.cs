@@ -157,7 +157,7 @@ namespace Xenon.Services
             set => Author = $"{value}";
         }
 
-        public DateTime TimeStamp { get; set; }
+        public DateTimeOffset TimeStamp { get; set; }
     }
 
     public class Warn
