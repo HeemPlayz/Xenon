@@ -98,15 +98,23 @@ namespace Xenon.Modules
                     $"\n<:offline:456910084279238666> Offline ❯ {Context.Guild.MemberCount - Context.Guild.Users.Count(x => x.Status == UserStatus.Offline)}" +
                     $"\n<:bot:456910103136829441> Bots ❯ {Context.Guild.Users.Count(x => x.IsBot)}",
                     true)
-                .AddField($"Roles - {Context.Guild.Roles.Count}",
-                    roles, true)
-                .AddField($"Emojis - {Context.Guild.Emotes.Count}",
-                    emojis, true)
                 .AddField($"Channels - {Context.Guild.Channels.Count}",
                     $"Categorys ❯ {Context.Guild.CategoryChannels.Count}" +
                     $"\nText Channels ❯ {Context.Guild.TextChannels.Count}" +
                     $"\nVoice Channels ❯ {Context.Guild.VoiceChannels.Count}",
                     true);
+
+            if (roles.Any())
+            {
+                embed.AddField($"Roles - {Context.Guild.Roles.Count}",
+                    roles, true);
+            }
+
+            if (emojis.Any())
+            {
+                embed.AddField($"Emojis - {Context.Guild.Emotes.Count}",
+                    emojis, true);
+            }
 
             await ReplyEmbedAsync(embed);
         }
