@@ -530,5 +530,32 @@ namespace Xenon.Modules
                 return target.Hierarchy < ((SocketGuildUser) Context.User).Hierarchy;
             }
         }
+        
+        [Group("profile")]
+        [Alias("p")]
+        [CommandCategory(CommandCategory.General)]
+        [CheckServer]
+        public class ProfileModule : CommandBase
+        {
+            [Command("")]
+            public async Task ProfileAsync()
+            {
+                await ProfileAsync((SocketGuildUser) Context.User);
+            }
+
+            [Command("")]
+            public async Task ProfileAsync(SocketGuildUser user)
+            {
+                var embed = new EmbedBuilder()
+                    .WithAuthor($"{user.Nickname ?? user.Username}'s profile", user.GetAvatarUrl() ?? user.GetDefaultAvatarUrl())
+                    .WithDescription($"Id ❯ {user.Id}" +
+                                     $"\nJoined This Server ❯ {user.JoinedAt:dd.MM.yyyy HH:mm:ss} ({user.JoinedAt.Humanize()})" +
+                                     $"\nJoined Discord ❯ {user.CreatedAt:dd.MM.yyyy HH:mm:ss} ({user.CreatedAt.Humanize()})" +
+                                     $"\nPosition ❯ {(user.Hierarchy == int.MaxValue ? Context.Guild.Roles.Max(x => x.Position) : user.Hierarchy)}/{Context.Guild.Roles.Max(x => x.Position)}" +
+                                     $"\nStatus ❯ {user.Status.Humanize(LetterCasing.Title)}");
+
+                await ReplyEmbedAsync(embed);
+            }
+        }
     }
 }
