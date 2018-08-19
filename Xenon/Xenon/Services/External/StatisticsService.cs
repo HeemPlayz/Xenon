@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Listcord.Net;
@@ -16,7 +17,7 @@ namespace Xenon.Services.External
         {
             _configuration = configuration;
             _client = client;
-            _listcord = new ListcordClient(_configuration.BotToken);
+            _listcord = new ListcordClient(_configuration.LiscordApiKey);
 
             _client.ShardReady += ShardReady;
             _client.JoinedGuild += GuildUpdated;
@@ -37,7 +38,7 @@ namespace Xenon.Services.External
         {
             foreach (var shard in _client.Shards)
                 await shard.SetActivityAsync(new Game(
-                    $"for commands | shard {shard.ShardId + 1}/{_client.Shards.Count} | {_client.Guilds.Count} servers",
+                    $"for commands | {_configuration.BotPrefixes.First()}help | shard {shard.ShardId + 1}/{_client.Shards.Count} | {_client.Guilds.Count} servers",
                     ActivityType.Watching));
             await _listcord.PostBotGuildsAsync(_client.CurrentUser.Id, (ulong) _client.Guilds.Count);
         }
