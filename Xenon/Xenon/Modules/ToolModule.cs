@@ -2,7 +2,10 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
+using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using RiotSharp;
 using Xenon.Core;
 
@@ -39,6 +42,33 @@ namespace Xenon.Modules
             var bytes = Convert.FromBase64String(text).Select(x => (byte) (x - (byte) Context.User.Id % 3)).ToArray();
             var decoded = Encoding.UTF8.GetString(bytes);
             await ReplyEmbedAsync("Decoded Text", $"{decoded}");
+        }
+
+        [CommandCategory(CommandCategory.Tools)]
+        [Group("robot")]
+        public class Robot : CommandBase
+        {
+            private readonly Random _random;
+
+            public Robot(Random random)
+            {
+                _random = random;
+            }
+
+            [Command("")]
+            public async Task RobotAsync()
+            {
+                await RobotAsync(Context.User);
+            }
+
+            [Command("")]
+            [CheckServer]
+            public async Task RobotAsync(SocketUser user)
+            {
+                await ReplyEmbedAsync(new EmbedBuilder()
+                    .WithTitle($"{(user as IGuildUser)?.Nickname ?? user.Username} as robot").WithImageUrl(
+                        $"https://robohash.org/{HttpUtility.UrlEncode((user as IGuildUser)?.Nickname ?? user.Username)}?set={_random.Next(1, 4)}"));
+            }
         }
     }
 }

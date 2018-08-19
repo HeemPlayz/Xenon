@@ -182,7 +182,8 @@ namespace Xenon.Modules
         [Summary("Converts text to the ascii format")]
         public async Task AsciiAsync([Remainder] string text)
         {
-            await ReplyAsync($"{await _http.GetStringAsync($"http://artii.herokuapp.com/make?text={text}")}".BlockCode());
+            await ReplyAsync(
+                $"{await _http.GetStringAsync($"http://artii.herokuapp.com/make?text={text}")}".BlockCode());
         }
 
         [Group("gif")]

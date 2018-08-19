@@ -187,10 +187,17 @@ namespace Xenon.Core
             object value, IServiceProvider services)
         {
             var currentUser = (context as SocketCommandContext)?.Guild.CurrentUser;
-            if (value is SocketGuildUser user && currentUser != null)
-                return Task.FromResult(user.Hierarchy <= currentUser.Hierarchy
-                    ? PreconditionResult.FromSuccess()
-                    : PreconditionResult.FromError("I have not enough permissions to do this"));
+            switch (value)
+            {
+                case SocketGuildUser user when currentUser != null:
+                    return Task.FromResult(user.Hierarchy <= currentUser.Hierarchy
+                        ? PreconditionResult.FromSuccess()
+                        : PreconditionResult.FromError("I have not enough permissions to do this"));
+                case SocketRole role when currentUser != null:
+                    return Task.FromResult(role.Position <= currentUser.Hierarchy
+                        ? PreconditionResult.FromSuccess()
+                        : PreconditionResult.FromError("I have not enough permissions to do this"));
+            }
 
             throw new NotImplementedException(nameof(value));
         }
@@ -205,10 +212,17 @@ namespace Xenon.Core
             if (services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
                 return Task.FromResult(PreconditionResult.FromSuccess());
             var user = (context as SocketCommandContext)?.Guild.CurrentUser;
-            if (value is SocketGuildUser target && user != null)
-                return Task.FromResult(target.Hierarchy <= user.Hierarchy
-                    ? PreconditionResult.FromSuccess()
-                    : PreconditionResult.FromError("You have not enough permissions to do this"));
+            switch (value)
+            {
+                case SocketGuildUser target when user != null:
+                    return Task.FromResult(target.Hierarchy <= user.Hierarchy
+                        ? PreconditionResult.FromSuccess()
+                        : PreconditionResult.FromError("You have not enough permissions to do this"));
+                case SocketRole role when user != null:
+                    return Task.FromResult(role.Position <= user.Hierarchy
+                        ? PreconditionResult.FromSuccess()
+                        : PreconditionResult.FromError("I have not enough permissions to do this"));
+            }
 
             throw new NotImplementedException(nameof(value));
         }

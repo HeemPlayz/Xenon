@@ -125,27 +125,19 @@ namespace Xenon.Services.External
         private static EmbedBuilder SetColor(this EmbedBuilder embed, ColorType colorType, Server server,
             Random random)
         {
-            try
+            random = random ?? new Random();
+            embed = embed ?? new EmbedBuilder();
+            switch (colorType)
             {
-                random = random ?? new Random();
-                embed = embed ?? new EmbedBuilder();
-                switch (colorType)
-                {
-                    case ColorType.Random:
-                        embed.WithColor(new Color(random.Next(255), random.Next(255), random.Next(255)));
-                        break;
-                    case ColorType.Normal:
-                        embed.WithColor(server.DefaultColor);
-                        break;
-                }
+                case ColorType.Random:
+                    embed.WithColor(new Color(random.Next(255), random.Next(255), random.Next(255)));
+                    break;
+                case ColorType.Normal:
+                    embed.WithColor(server.DefaultColor);
+                    break;
+            }
 
-                return embed;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            return embed;
         }
 
         public static bool GetSetting(this Server server, Setting setting)
