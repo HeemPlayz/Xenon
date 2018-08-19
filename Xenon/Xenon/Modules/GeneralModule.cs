@@ -105,16 +105,12 @@ namespace Xenon.Modules
                     true);
 
             if (roles.Any())
-            {
                 embed.AddField($"Roles - {Context.Guild.Roles.Count}",
                     roles, true);
-            }
 
             if (emojis.Any())
-            {
                 embed.AddField($"Emojis - {Context.Guild.Emotes.Count}",
                     emojis, true);
-            }
 
             await ReplyEmbedAsync(embed);
         }
