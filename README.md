@@ -7,5 +7,3 @@
   <a href="http://xsleepy.me/"><img src="https://raw.githubusercontent.com/SleepyBoyy/Xenon/master/Images/Documentation.png" width="200" /></a> &nbsp;
   <a href="https://discord.gg/GPk5Cxa"><img src="https://raw.githubusercontent.com/SleepyBoyy/Xenon/master/Images/Support.png" width="200" /></a>
 </div>
-
-# Xenon
