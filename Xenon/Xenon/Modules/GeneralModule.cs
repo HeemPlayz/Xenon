@@ -140,7 +140,7 @@ namespace Xenon.Modules
                     if (Enum.TryParse(typeof(CommandCategory), command, true, out var categoryObj))
                     {
                         var category = (CommandCategory) categoryObj;
-                        if (Server.DisabledCategories.Contains(category))
+                        if (Server != null && Server.DisabledCategories.Contains(category))
                         {
                             await ReplyEmbedAsync("Unknown command",
                                 $"Couldn't find a command or category for {command}");
@@ -228,7 +228,7 @@ namespace Xenon.Modules
                 foreach (var value in Enum.GetValues(typeof(CommandCategory)))
                 {
                     var category = (CommandCategory) value;
-                    if (Server.DisabledCategories.Contains(category)) continue;
+                    if (Server != null && Server.DisabledCategories.Contains(category)) continue;
                     var embed = NormalizeEmbed($"{category.Humanize(LetterCasing.Title)} Commands",
                         $"Use {"help <command/category>".InlineCode()} to see more information about a specific command/categoory\n\n{"< >".InlineCode()} indicates a required parameter\n{"( )".InlineCode()} indicates an optional parameter");
                     var modules = _commands.Modules.Where(x =>

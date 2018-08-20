@@ -133,7 +133,7 @@ namespace Xenon.Services.External
                     embed.WithColor(new Color(random.Next(255), random.Next(255), random.Next(255)));
                     break;
                 case ColorType.Normal:
-                    embed.WithColor(server.DefaultColor);
+                    embed.WithColor(server?.DefaultColor ?? PublicVariables.DefaultColor);
                     break;
             }
 

@@ -39,7 +39,7 @@ namespace Xenon.Core
             var executionObj = Caching.ExecutionObjects[Context.Message.Id];
             Database.Execute(x =>
             {
-                x.Store(Server);
+                if (Server != null) x.Store(Server);
                 if (x.Advanced.HasChanges) x.SaveChanges();
             });
             Caching.ExecutionObjects.Remove(Context.Message.Id);
