@@ -182,7 +182,8 @@ namespace Xenon.Services
         Mute,
         Clear,
         Bulk,
-        Unban
+        Unban,
+        Unmute
     }
 
     public enum BlockingType

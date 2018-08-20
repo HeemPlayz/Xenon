@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,9 +11,12 @@ using Discord.WebSocket;
 using RiotSharp;
 using Xenon.Core;
 
+#endregion
+
 namespace Xenon.Modules
 {
     [CommandCategory(CommandCategory.Tools)]
+    [CheckState]
     public class ToolModule : CommandBase
     {
         private readonly Configuration _configuration;

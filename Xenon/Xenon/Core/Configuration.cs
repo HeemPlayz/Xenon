@@ -27,6 +27,8 @@ namespace Xenon.Core
 
         [JsonProperty("GiphyApiKey")] public readonly string GiphyApiKey = "";
 
+        [JsonProperty("GitHubLink")] public readonly string GitHubLink = "";
+
         [JsonProperty("KsoftApiKey")] public readonly string KsoftApiKey = "";
 
         [JsonProperty("LiscordApiKey")] public readonly string LiscordApiKey = "";

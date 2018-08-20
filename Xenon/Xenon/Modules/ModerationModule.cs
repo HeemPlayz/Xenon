@@ -94,6 +94,7 @@ namespace Xenon.Modules
         }
 
         [Command("mute")]
+        [Alias("m")]
         [CheckPermission(ChannelPermission.MuteMembers)]
         [CheckBotPermission(GuildPermission.ManageRoles)]
         [Summary("Mutes a user for a given reason")]
@@ -104,7 +105,7 @@ namespace Xenon.Modules
             var role = Context.Guild.Roles.All(x => x.Name != roleName)
                 ? Context.Guild.GetRole(
                     (await Context.Guild.CreateRoleAsync(roleName,
-                        new GuildPermissions(sendMessages: false, addReactions: false, speak: false))).Id)
+                        new GuildPermissions(sendMessages: false))).Id)
                 : Context.Guild.Roles.FirstOrDefault(x => x.Name == roleName);
 
             if (user.Roles.Contains(role))
@@ -113,6 +114,26 @@ namespace Xenon.Modules
                 return;
             }
 
+            await user.AddRoleAsync(role);
+
+            var logItem = _serverService.AddLogItem(Server, ActionType.Mute, reason, Context.User.Id, user.Id);
+            await _logService.SendLog(Context.Guild, "User Muted",
+                $"Responsible User ❯ {Context.User.Mention}\nUser ❯ {user.Mention} ({user.Nickname ?? user.Username}#{user.Discriminator})\nReason ❯ {reason ?? $"none, {Context.User.Mention} use {$"reason {logItem.LogId} <reason>".InlineCode()}"}\nId ❯ {logItem.LogId}",
+                server: Server);
+            await ReplyEmbedAsync("User Muted",
+                $"Responsible User ❯ {Context.User.Mention}\nReason ❯ {reason ?? $"none, {Context.User.Mention} use {$"reason {logItem.LogId} <reason>".InlineCode()}"}");
+
+            try
+            {
+                await user.SendMessageAsync(embed: NormalizeEmbed("You Got Muted",
+                        $"Responsible User ❯ {Context.User.Mention} ({(Context.User as IGuildUser)?.Nickname ?? Context.User.Username})")
+                    .Build());
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+            
             var overwritePermissions = new OverwritePermissions(sendMessages: PermValue.Deny,
                 addReactions: PermValue.Deny, speak: PermValue.Deny);
             var overwrite = new Overwrite(role.Id, PermissionTarget.Role, overwritePermissions);
@@ -122,11 +143,62 @@ namespace Xenon.Modules
                     await channel.AddPermissionOverwriteAsync(role, overwritePermissions);
         }
 
+        [Command("unmute")]
+        [Alias("um")]
+        [CheckPermission(ChannelPermission.MuteMembers)]
+        [CheckBotPermission(GuildPermission.ManageRoles)]
+        [Summary("Unmutes a user for a given reason")]
+        public async Task UnMuteAsync([CheckUserHierarchy] [CheckBotHierarchy]
+            SocketGuildUser user, [Remainder] string reason = null)
+        {
+            var roleName = $"{Context.Client.CurrentUser.Username}-Muted";
+            var role = Context.Guild.Roles.All(x => x.Name != roleName)
+                ? Context.Guild.GetRole(
+                    (await Context.Guild.CreateRoleAsync(roleName,
+                        new GuildPermissions(sendMessages: false))).Id)
+                : Context.Guild.Roles.FirstOrDefault(x => x.Name == roleName);
+
+            if (!user.Roles.Contains(role))
+            {
+                await ReplyEmbedAsync("Not Muted", $"{user.Mention} is already unmuted");
+                return;
+            }
+
+            await user.RemoveRoleAsync(role);
+
+            var logItem = _serverService.AddLogItem(Server, ActionType.Unmute, reason, Context.User.Id, user.Id);
+            await _logService.SendLog(Context.Guild, "User Unmuted",
+                $"Responsible User ❯ {Context.User.Mention}\nUser ❯ {user.Mention} ({user.Nickname ?? user.Username}#{user.Discriminator})\nReason ❯ {reason ?? $"none, {Context.User.Mention} use {$"reason {logItem.LogId} <reason>".InlineCode()}"}\nId ❯ {logItem.LogId}",
+                server: Server);
+            await ReplyEmbedAsync("User Unmuted",
+                $"Responsible User ❯ {Context.User.Mention}\nReason ❯ {reason ?? $"none, {Context.User.Mention} use {$"reason {logItem.LogId} <reason>".InlineCode()}"}");
+
+            try
+            {
+                await user.SendMessageAsync(embed: NormalizeEmbed("You Got Unmuted",
+                        $"Responsible User ❯ {Context.User.Mention} ({(Context.User as IGuildUser)?.Nickname ?? Context.User.Username})")
+                    .Build());
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+            
+            var overwritePermissions = new OverwritePermissions(sendMessages: PermValue.Deny,
+                addReactions: PermValue.Deny, speak: PermValue.Deny);
+            var overwrite = new Overwrite(role.Id, PermissionTarget.Role, overwritePermissions);
+
+            foreach (var channel in Context.Guild.Channels)
+                if (!channel.PermissionOverwrites.Contains(overwrite))
+                    await channel.AddPermissionOverwriteAsync(role, overwritePermissions);
+
+        }
+
         [Command("bulk")]
         [CheckPermission(ChannelPermission.ManageChannels)]
         [CheckBotPermission(ChannelPermission.ManageChannels)]
         [Summary("Deletes all messages from this channel")]
-        public async Task BulkAsync()
+        public async Task BulkAsync(string reason = null)
         {
             var oldChannel = (ITextChannel) Context.Channel;
             await oldChannel.DeleteAsync();
@@ -152,8 +224,9 @@ namespace Xenon.Modules
                 }
             await Interactive.ReplyAndDeleteAsync(channel,
                 embed: NormalizeEmbed("Chat Cleared", "Deleted all messages from this channel").Build());
+            var logItem = _serverService.AddLogItem(Server, ActionType.Bulk, reason, Context.User.Id, 0);
             await _logService.SendLog(Context.Guild, "Bulk delete",
-                $"Responsible User ❯ {Context.User.Mention}\nChannel ❯ {channel.Mention}\nReason ❯ none",
+                $"Responsible User ❯ {Context.User.Mention}\nChannel ❯ {channel.Mention}\nReason ❯ {reason ?? $"none, {Context.User.Mention} use {$"reason {logItem.LogId} <reason>".InlineCode()}"}\nId ❯ {logItem.LogId}",
                 server: Server);
         }
 
