@@ -30,7 +30,7 @@ namespace Xenon.Services
             _database.Execute(x =>
             {
                 server = x.Load<Server>($"{guild.Id}");
-                logItem.LogId = server.ModLog.Any() ? server.ModLog.Keys.Max() : 0;
+                logItem.LogId = server.ModLog.Any() ? server.ModLog.Keys.Max() + 1 : 0;
                 server.ModLog[logItem.LogId] = logItem;
                 x.Store(server, $"{guild.Id}");
                 x.SaveChanges();

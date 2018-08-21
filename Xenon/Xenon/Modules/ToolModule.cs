@@ -51,6 +51,7 @@ namespace Xenon.Modules
 
         [CommandCategory(CommandCategory.Tools)]
         [Group("robot")]
+        [Summary("Shows someone as robot")]
         public class Robot : CommandBase
         {
             private readonly Random _random;
