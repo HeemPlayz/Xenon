@@ -315,8 +315,8 @@ namespace Xenon.Services
         {
             auditLog = guild.GetAuditLogsAsync(5).GetAwaiter().GetResult().FirstOrDefault(x => x.Action == type);
             if (auditLog == null) return false;
-            var timeStamp = SnowflakeUtils.FromSnowflake(auditLog.Id);
-            if (timeStamp > DateTimeOffset.Now - TimeSpan.FromSeconds(5)) return false;
+            //var timeStamp = SnowflakeUtils.FromSnowflake(auditLog.Id);
+            //if (timeStamp > DateTimeOffset.Now - TimeSpan.FromSeconds(5)) return false;
             return auditLog.User.Id != _client.CurrentUser.Id;
         }
     }
