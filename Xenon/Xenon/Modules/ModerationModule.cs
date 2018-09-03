@@ -95,7 +95,7 @@ namespace Xenon.Modules
 
         [Command("mute")]
         [Alias("m")]
-        [CheckPermission(ChannelPermission.MuteMembers)]
+        [CheckPermission(GuildPermission.MuteMembers)]
         [CheckBotPermission(GuildPermission.ManageRoles)]
         [Summary("Mutes a user for a given reason")]
         public async Task MuteAsync([CheckUserHierarchy] [CheckBotHierarchy]
@@ -145,7 +145,7 @@ namespace Xenon.Modules
 
         [Command("unmute")]
         [Alias("um")]
-        [CheckPermission(ChannelPermission.MuteMembers)]
+        [CheckPermission(GuildPermission.MuteMembers)]
         [CheckBotPermission(GuildPermission.ManageRoles)]
         [Summary("Unmutes a user for a given reason")]
         public async Task UnMuteAsync([CheckUserHierarchy] [CheckBotHierarchy]
