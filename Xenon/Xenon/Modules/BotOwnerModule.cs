@@ -22,7 +22,7 @@ namespace Xenon.Modules
     [CommandCategory(CommandCategory.BotOwner)]
     public class BotOwnerModule : CommandBase
     {
-        private readonly IEnumerable<string> _dependencys = new[]
+        private readonly IEnumerable<string> _dependencies = new[]
         {
             "Discord", "Discord.Net", "Discord.Commands", "Discord.WebSocket", "System", "System.Linq",
             "System.Collections.Generic", "System.Text", "System.Threading.Tasks"
@@ -45,7 +45,7 @@ namespace Xenon.Modules
             try
             {
                 var result = await CSharpScript.EvaluateAsync(
-                    $"{string.Join("\n", _dependencys.Select(x => $"using {x};"))}\n{code}", scriptOptions,
+                    $"{string.Join("\n", _dependencies.Select(x => $"using {x};"))}\n{code}", scriptOptions,
                     new EvaluateObject
                     {
                         Client = Context.Client,
