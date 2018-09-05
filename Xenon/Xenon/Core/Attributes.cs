@@ -97,7 +97,7 @@ namespace Xenon.Core
                 if (guildUser == null)
                     return Task.FromResult(
                         PreconditionResult.FromError(
-                            $"This command is only aviable in {"server".InlineCode()} channels"));
+                            $"This command is only available in {"server".InlineCode()} channels"));
                 if (!guildUser.GuildPermissions.Has(GuildPermission.Value))
                     return Task.FromResult(
                         PreconditionResult.FromError(
@@ -128,7 +128,7 @@ namespace Xenon.Core
             return Task.FromResult(context.Guild != null
                 ? PreconditionResult.FromSuccess()
                 : PreconditionResult.FromError(
-                    $"This command is only aviable in {"server".InlineCode()} channels"));
+                    $"This command is only available in {"server".InlineCode()} channels"));
         }
     }
 
@@ -141,7 +141,7 @@ namespace Xenon.Core
             if (context.Channel is ITextChannel text && text.IsNsfw)
                 return Task.FromResult(PreconditionResult.FromSuccess());
             return Task.FromResult(
-                PreconditionResult.FromError($"This command is only aviable in {"nsfw".InlineCode()} channels"));
+                PreconditionResult.FromError($"This command is only available in {"nsfw".InlineCode()} channels"));
         }
     }
 
@@ -158,7 +158,7 @@ namespace Xenon.Core
                         return Task.FromResult(PreconditionResult.FromError("You are not the owner of this bot!"));
                     return Task.FromResult(PreconditionResult.FromSuccess());
                 default:
-                    return Task.FromResult(PreconditionResult.FromError("I just occured an internal error! :("));
+                    return Task.FromResult(PreconditionResult.FromError("An internal error has occurred! :("));
             }
         }
     }
@@ -172,7 +172,7 @@ namespace Xenon.Core
             if (services.GetService<Configuration>().OwnerIds.Contains(context.User.Id))
                 return Task.FromResult(PreconditionResult.FromSuccess());
             return Task.FromResult(context.Guild == null
-                ? PreconditionResult.FromError($"This command is only aviable in {"server".InlineCode()} channels")
+                ? PreconditionResult.FromError($"This command is only available in {"server".InlineCode()} channels")
                 : ((IGuildUser) context.User).Guild.OwnerId == context.User.Id
                     ? PreconditionResult.FromSuccess()
                     : PreconditionResult.FromError(
@@ -192,11 +192,11 @@ namespace Xenon.Core
                 case SocketGuildUser user when currentUser != null:
                     return Task.FromResult(user.Hierarchy <= currentUser.Hierarchy
                         ? PreconditionResult.FromSuccess()
-                        : PreconditionResult.FromError("I have not enough permissions to do this"));
+                        : PreconditionResult.FromError("I don't have the correct permissions to do this"));
                 case SocketRole role when currentUser != null:
                     return Task.FromResult(role.Position <= currentUser.Hierarchy
                         ? PreconditionResult.FromSuccess()
-                        : PreconditionResult.FromError("I have not enough permissions to do this"));
+                        : PreconditionResult.FromError("I don't have the correct permissions to do this"));
             }
 
             throw new NotImplementedException(nameof(value));
@@ -217,11 +217,11 @@ namespace Xenon.Core
                 case SocketGuildUser target when user != null:
                     return Task.FromResult(target.Hierarchy <= user.Hierarchy
                         ? PreconditionResult.FromSuccess()
-                        : PreconditionResult.FromError("You have not enough permissions to do this"));
+                        : PreconditionResult.FromError("You don't have the correct permissions to do this"));
                 case SocketRole role when user != null:
                     return Task.FromResult(role.Position <= user.Hierarchy
                         ? PreconditionResult.FromSuccess()
-                        : PreconditionResult.FromError("I have not enough permissions to do this"));
+                        : PreconditionResult.FromError("I don't have the correct permissions to do this"));
             }
 
             throw new NotImplementedException(nameof(value));
