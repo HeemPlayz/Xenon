@@ -7,7 +7,7 @@ using Xenon.Core;
 
 #endregion
 
-namespace Xenon.Services
+namespace Xenon.Services.External
 {
     public class ConfigurationService
     {

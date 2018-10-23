@@ -6,7 +6,7 @@ using Discord.Commands;
 
 #endregion
 
-namespace Discord.Addons.Interactive
+namespace Xenon.Core.Discord.Addons.Interactive.Criteria
 {
     public class Criteria<T> : ICriterion<T>
     {

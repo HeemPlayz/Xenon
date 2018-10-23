@@ -1,10 +1,11 @@
 ﻿#region
 
 using System.Collections.Generic;
+using Discord;
 
 #endregion
 
-namespace Discord.Addons.Interactive
+namespace Xenon.Core.Discord.Addons.Interactive.Paginator
 {
     public class PaginatedMessage
     {

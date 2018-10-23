@@ -2,6 +2,8 @@
 
 using System.Linq;
 using Discord;
+using Xenon.Services.External;
+using ActionType = Xenon.Services.External.ActionType;
 
 #endregion
 

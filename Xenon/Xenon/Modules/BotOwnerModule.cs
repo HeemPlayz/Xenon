@@ -13,6 +13,7 @@ using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Xenon.Core;
 using Xenon.Services;
+using Xenon.Services.External;
 
 #endregion
 

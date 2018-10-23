@@ -3,11 +3,10 @@
 using System.Collections.Generic;
 using Discord;
 using Discord.Rest;
-using Xenon.Services.External;
 
 #endregion
 
-namespace Xenon.Services
+namespace Xenon.Services.External
 {
     public static class PublicVariables
     {

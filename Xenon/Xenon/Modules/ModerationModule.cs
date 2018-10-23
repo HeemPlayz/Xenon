@@ -9,7 +9,8 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Xenon.Core;
 using Xenon.Services;
-using ActionType = Xenon.Services.ActionType;
+using Xenon.Services.External;
+using ActionType = Xenon.Services.External.ActionType;
 
 #endregion
 

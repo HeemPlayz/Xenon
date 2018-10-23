@@ -2,16 +2,16 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
 using Xenon.Core;
-using Xenon.Services.External;
 
 #endregion
 
-namespace Xenon.Services
+namespace Xenon.Services.External
 {
     public class LogService
     {

@@ -3,13 +3,17 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.Rest;
 using Discord.WebSocket;
+using Xenon.Core.Discord.Addons.Interactive.Callbacks;
+using Xenon.Core.Discord.Addons.Interactive.Criteria;
+using Xenon.Core.Discord.Addons.Interactive.Paginator;
 
 #endregion
 
-namespace Discord.Addons.Interactive
+namespace Xenon.Core.Discord.Addons.Interactive
 {
     public class InteractiveService : IDisposable
     {

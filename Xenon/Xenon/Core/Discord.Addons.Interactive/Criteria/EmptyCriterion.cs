@@ -5,7 +5,7 @@ using Discord.Commands;
 
 #endregion
 
-namespace Discord.Addons.Interactive
+namespace Xenon.Core.Discord.Addons.Interactive.Criteria
 {
     public class EmptyCriterion<T> : ICriterion<T>
     {

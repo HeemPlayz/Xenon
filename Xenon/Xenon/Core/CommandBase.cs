@@ -4,8 +4,8 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Addons.Interactive;
 using Discord.Commands;
+using Xenon.Core.Discord.Addons.Interactive;
 using Xenon.Services;
 using Xenon.Services.External;
 

@@ -3,12 +3,16 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Xenon.Core.Discord.Addons.Interactive.Criteria;
+using Xenon.Core.Discord.Addons.Interactive.Paginator;
+using Xenon.Core.Discord.Addons.Interactive.Results;
 
 #endregion
 
-namespace Discord.Addons.Interactive
+namespace Xenon.Core.Discord.Addons.Interactive
 {
     public class InteractiveBase<T> : ModuleBase<T>
         where T : SocketCommandContext

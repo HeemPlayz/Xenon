@@ -3,12 +3,15 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Xenon.Core.Discord.Addons.Interactive.Callbacks;
+using Xenon.Core.Discord.Addons.Interactive.Criteria;
 
 #endregion
 
-namespace Discord.Addons.Interactive
+namespace Xenon.Core.Discord.Addons.Interactive.Paginator
 {
     public class PaginatedMessageCallback : IReactionCallback
     {

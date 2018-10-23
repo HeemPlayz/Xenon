@@ -2,11 +2,12 @@
 
 using System.ComponentModel;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 
 #endregion
 
-namespace Discord.Addons.Interactive
+namespace Xenon.Core.Discord.Addons.Interactive.Criteria
 {
     public class EnsureFromUserCriterion : ICriterion<IMessage>
     {

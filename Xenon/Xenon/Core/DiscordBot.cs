@@ -9,12 +9,12 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using GiphyDotNet.Manager;
 using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
+using Xenon.Core.Discord.Addons.Interactive;
 using Xenon.Services;
 using Xenon.Services.External;
 using Xenon.Services.Nsfw;
@@ -153,7 +153,6 @@ namespace Xenon.Core
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                throw;
             }
         }
 

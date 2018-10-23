@@ -4,6 +4,7 @@ using System;
 using Discord.Commands;
 using Discord.WebSocket;
 using Xenon.Services;
+using Xenon.Services.External;
 
 #endregion
 
