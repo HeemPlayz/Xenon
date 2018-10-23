@@ -199,7 +199,7 @@ namespace Xenon.Core
                 case CommandError.Exception:
                 case null:
                     embed.WithTitle("Internal Error")
-                        .WithDescription("I just occured an internal error! :(");
+                        .WithDescription("An internal error has occurred! :(");
                     await context.Channel.SendMessageAsync(embed: embed.Build());
                     break;
             }
